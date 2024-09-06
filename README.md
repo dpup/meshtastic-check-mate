@@ -27,7 +27,7 @@ Run check-mate:
 | Arg           | Description                                                        |
 | ------------- | ------------------------------------------------------------------ |
 | -h            | Show help                                                          |
-| --host        | The IP or hostname of the meshtastic node, e.g. `192.168.10`       |
+| --host        | The IP or hostname of the meshtastic node, e.g. `192.168.5.10`     |
 | --location    | Text description of where your node is, e.g. `SF Mission District` |
 | --healthcheck | URL to send healthcheck pings to when receiving messages           |
 

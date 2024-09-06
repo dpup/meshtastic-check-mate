@@ -21,7 +21,7 @@ class CheckMate:
         self.users = {}
         self.iface = None
         self.connected = False
-        self.lastHealthcheck = None
+        self.lastHealthCheck = None
         self.healthCheckURL = healthCheckURL
         self.logger = logging.getLogger(__name__)
 
@@ -102,8 +102,8 @@ class CheckMate:
 
     def reportHealth(self):
         if self.healthCheckURL is not None:
-            if self.lastHealthcheck is None or time.time() - self.lastHealthcheck > 60:
-                self.lastHealthcheck = time.time()
+            if self.lastHealthCheck is None or time.time() - self.lastHealthCheck > 60:
+                self.lastHealthCheck = time.time()
                 response = requests.head(self.healthCheckURL)
                 if response.status_code == 200:
                     self.logger.info("[Healthcheck ❤️]")
