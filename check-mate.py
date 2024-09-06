@@ -132,7 +132,7 @@ class CheckMate:
             messages = [
                 f"{name}, read you 5 by 5 from {loc} ({snr} SNR)",
                 f"👋 {name}, got you from {loc}",
-                f"Yo {name}, {snr} SNR from {loc}",
+                f"Copy {name}, {snr} SNR from {loc}",
                 f"Hey {name}, received from {loc} ({snr} SNR)",
                 f"{name}, loud and clear from {loc} ({snr} SNR)",
                 f"{name}, copy your radio check from {loc}",
@@ -205,7 +205,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         prog="Meshtastic Check Mate",
         description="Monitors private channels and responds to radio checks",
-        epilog="Example: python check-mate.py --host 192.168.5.10 --location 'Base Camp' --healthcheck https://uptime.betterstack.com/api/v1/heartbeat/deadbeef",
+        epilog="Example: python3 check-mate.py --host meshtastic.local --location 'Base Camp' --healthcheck https://uptime.betterstack.com/api/v1/heartbeat/deadbeef",
     )
     parser.add_argument(
         "--host",
