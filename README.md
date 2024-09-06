@@ -2,10 +2,13 @@
 
 _TCP based bot that monitors **private** channels and responds to radio checks._
 
-## Set up
+## Requirements
 
-This program requires a meshtastic node connected via WiFi to the same network
-as the machine running this program. I use a Heltec V3 for this.
+- Python3.x
+- Meshtastic Python Library
+- [Meshtastic](https://meshtastic.org) node connected via WiFi to the same network as the machine running this program. I use a Heltec V3.
+
+## Installation
 
 Make sure python3 is installed, then clone the repo:
 
