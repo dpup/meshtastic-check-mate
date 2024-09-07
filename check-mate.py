@@ -116,27 +116,33 @@ class CheckMate:
         """Respond to a radio check"""
         channel = self.getChannel(packet)
         snr = self.getSNR(packet)
+        rssi = self.getRSSI(packet)
         text = self.getText(packet)
         name = self.getName(packet, interface)
 
         self.logger.info(
-            "[Acknowledging radio check]: %s (channel %d): %s", name, channel, text
+            "[Acknowledging radio check]: %s (channel %d, %s rssi, %s snr): %s",
+            name,
+            channel,
+            rssi,
+            snr,
+            text,
         )
 
-        interface.sendText(self.getMessage(snr, name), channelIndex=channel)
+        interface.sendText(self.getMessage(snr, rssi, name), channelIndex=channel)
 
-    def getMessage(self, snr, name):
+    def getMessage(self, snr, rssi, name):
         """generate a random message to respond to a radio check"""
         if self.location:
             loc = self.location
             messages = [
-                f"{name}, read you 5 by 5 from {loc} ({snr} SNR)",
+                f"{name}, read you 5 by 5 from {loc} ({rssi} RSSI, {snr} SNR)",
                 f"👋 {name}, got you from {loc}",
-                f"Copy {name}, {snr} SNR from {loc}",
-                f"Hey {name}, received from {loc} ({snr} SNR)",
-                f"{name}, loud and clear from {loc} ({snr} SNR)",
+                f"Copy {name}, {snr} SNR & {rssi} RSSI from {loc}",
+                f"Hey {name}, message received from {loc} ({rssi} RSSI, {snr} SNR)",
+                f"{name}, loud and clear from {loc} ({rssi} RSSI, {snr} SNR)",
                 f"{name}, copy your radio check from {loc}",
-                f"{name}, copy from {loc} ({snr} SNR)",
+                f"{name}, copy from {loc} ({rssi} RSSI, {snr} SNR)",
                 f"{name}, copy {snr} SNR from {loc}",
             ]
         else:
@@ -181,6 +187,11 @@ class CheckMate:
         if "rxSnr" not in packet:
             return 0
         return packet["rxSnr"]
+
+    def getRSSI(self, packet):
+        if "rxRssi" not in packet:
+            return 0
+        return packet["rxRssi"]
 
     def getName(self, packet, interface):
         if "from" in packet:
