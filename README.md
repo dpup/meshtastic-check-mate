@@ -25,6 +25,8 @@ Run check-mate:
 
     python3 check-mate.py --host meshtastic.local --location 'Base Camp'
 
+Then in a private channel on a different node to the one connected to `check-mate` send a message containing `radio check` or `mesh check` (case insensitive and spaces are ignored).
+
 ### Arguments
 
 | Arg           | Env            | Description                                                        |

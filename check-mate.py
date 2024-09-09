@@ -86,7 +86,7 @@ class CheckMate:
                     self.logger.info("[Ignoring default channel] %s: %s", name, text)
                     return
 
-                if not re.search(r"radio\s*check", text, re.IGNORECASE):
+                if not re.search(r"(mesh|radio)\s*check", text, re.IGNORECASE):
                     self.logger.info(
                         "[Not a radio check] %s (channel %d): %s %d",
                         name,
