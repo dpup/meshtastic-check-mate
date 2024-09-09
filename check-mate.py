@@ -1,5 +1,6 @@
 import argparse
 import logging
+import os
 import random
 import re
 import requests
@@ -135,15 +136,16 @@ class CheckMate:
         """generate a random message to respond to a radio check"""
         if self.location:
             loc = self.location
+            quality = f"({rssi} RSSI, {snr} SNR)"
             messages = [
-                f"{name}, read you 5 by 5 from {loc} ({rssi} RSSI, {snr} SNR)",
-                f"👋 {name}, got you from {loc}",
+                f"{name}, read you 5 by 5 from {loc} {quality}",
+                f"👋 {name}, got you from {loc} {quality}",
                 f"Copy {name}, {snr} SNR & {rssi} RSSI from {loc}",
-                f"Hey {name}, message received from {loc} ({rssi} RSSI, {snr} SNR)",
-                f"{name}, loud and clear from {loc} ({rssi} RSSI, {snr} SNR)",
-                f"{name}, copy your radio check from {loc}",
-                f"{name}, copy from {loc} ({rssi} RSSI, {snr} SNR)",
-                f"{name}, copy {snr} SNR from {loc}",
+                f"Hey {name}, message received from {loc} {quality}",
+                f"{name}, loud and clear from {loc} {quality}",
+                f"{name}, copy your radio check from {loc} {quality}",
+                f"{name}, copy from {loc} {quality}",
+                f"{name}, copy {snr} SNR & {rssi} RSSI from {loc}",
             ]
         else:
             messages = [
@@ -221,8 +223,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--host",
         dest="host",
-        required=True,
+        required=False,
         help="IP or hostname for Meshtastic device",
+        default=os.environ.get("HOST"),
     )
     parser.add_argument(
         "-l",
@@ -230,14 +233,21 @@ if __name__ == "__main__":
         dest="location",
         required=False,
         help="Location to report in radio checks",
+        default=os.environ.get("LOCATION"),
     )
     parser.add_argument(
         "--healthcheck",
         dest="healthCheckURL",
         required=False,
         help="URL to report healthchecks to (empty HEAD request)",
+        default=os.environ.get("HEALTHCHECKURL"),
     )
     args = parser.parse_args()
+
+    if not args.host:
+        parser.error(
+            "Please provide a host via --host or the $HOST environment variable"
+        )
 
     checkmate = CheckMate(args.host, args.location, args.healthCheckURL)
     sys.exit(checkmate.start())

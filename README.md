@@ -27,12 +27,12 @@ Run check-mate:
 
 ### Arguments
 
-| Arg           | Description                                                        |
-| ------------- | ------------------------------------------------------------------ |
-| -h            | Show help                                                          |
-| --host        | The IP or hostname of the meshtastic node, e.g. `192.168.5.10`     |
-| --location    | Text description of where your node is, e.g. `SF Mission District` |
-| --healthcheck | URL to send healthcheck pings to when receiving messages           |
+| Arg           | Env            | Description                                                        |
+| ------------- | -------------- | ------------------------------------------------------------------ |
+| -h            | N/A            | Show help                                                          |
+| --host        | HOST           | The IP or hostname of the meshtastic node, e.g. `192.168.5.10`     |
+| --location    | LOCATION       | Text description of where your node is, e.g. `SF Mission District` |
+| --healthcheck | HEALTHCHECKURL | URL to send healthcheck pings to when receiving messages           |
 
 ## Example radio check
 
