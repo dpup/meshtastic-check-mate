@@ -8,6 +8,7 @@ import sys
 import time
 
 from pubsub import pub
+from pythonjsonlogger import jsonlogger
 
 import meshtastic
 import meshtastic.tcp_interface
@@ -35,7 +36,7 @@ class CheckMate:
 
         while True:
             try:
-                self.logger.info("[Connecting to %s...]", self.host)
+                self.logger.info("Connecting...", extra={"host": self.host})
                 self.connected = True
                 self.iface = meshtastic.tcp_interface.TCPInterface(hostname=self.host)
                 try:
@@ -43,13 +44,17 @@ class CheckMate:
                         time.sleep(5)
                 except KeyboardInterrupt:
                     # On keyboard interrupt, close the connection and exit.
-                    self.logger.info("[Shutting down...]")
+                    self.logger.info("Shutting down...", extra={"host": self.host})
                     self.iface.close()
                     return 0
 
             except Exception as ex:
-                self.logger.error("Error with connection to %s : %s", self.host, ex)
-                self.logger.info("[Retrying in 5 seconds...]")
+                self.logger.error(
+                    "Error with connection: %s",
+                    ex,
+                    extra={"host": self.host, "error": ex},
+                )
+                self.logger.info("Retrying in 5 seconds...")
                 time.sleep(5)
 
     def onConnect(self, interface, topic=pub.AUTO_TOPIC):
@@ -57,11 +62,11 @@ class CheckMate:
         if interface.nodes:
             for node in interface.nodes.values():
                 self.updateUser(node["user"])
-        self.logger.info("[Connected...]")
+        self.logger.info("Connected...")
 
     def onDisconnect(self, interface, topic=pub.AUTO_TOPIC):
         """called when we disconnect from the radio"""
-        self.logger.info("[Disconnected... waiting for reconnect...]")
+        self.logger.info("Disconnected... waiting for reconnect...")
         self.connected = False
 
     def onReceive(self, packet, interface):
@@ -74,7 +79,7 @@ class CheckMate:
                 if "user" in packet["decoded"]:
                     self.updateUser(packet["decoded"]["user"])
                 else:
-                    self.logger.info("Ignoring missing user: %s", packet)
+                    self.logger.info("Ignoring missing user", extra={"packet": packet})
                 return
 
             if self.isTextMessage(packet):
@@ -83,15 +88,16 @@ class CheckMate:
                 name = self.getName(packet, interface)
 
                 if channel == 0:
-                    self.logger.info("[Ignoring default channel] %s: %s", name, text)
+                    self.logger.info(
+                        "Ignoring message to default channel",
+                        extra={"name": name, "text": text},
+                    )
                     return
 
                 if not re.search(r"(mesh|radio)\s*check", text, re.IGNORECASE):
                     self.logger.info(
-                        "[Not a radio check] %s (channel %d): %s %d",
-                        name,
-                        channel,
-                        text,
+                        "Not a radio check",
+                        extra={"name": name, "channel": channel, "text": text},
                     )
                     return
 
@@ -99,7 +105,11 @@ class CheckMate:
                 return
 
         except Exception as ex:
-            self.logger.warning("Error processing packet: %s // %v", ex, packet)
+            self.logger.warning(
+                "Error processing packet: %s",
+                ex,
+                extra={"packet": packet},
+            )
 
     def reportHealth(self):
         if self.healthCheckURL is not None:
@@ -107,10 +117,11 @@ class CheckMate:
                 self.lastHealthCheck = time.time()
                 response = requests.head(self.healthCheckURL)
                 if response.status_code == 200:
-                    self.logger.info("[Healthcheck ❤️]")
+                    self.logger.info("Healthcheck ❤️")
                 else:
                     self.logger.warning(
-                        "Healthcheck failed with status code: %d", response.status_code
+                        "Healthcheck failed",
+                        extra={"statusCode": response.status_code},
                     )
 
     def ackRadioCheck(self, packet, interface):
@@ -122,12 +133,14 @@ class CheckMate:
         name = self.getName(packet, interface)
 
         self.logger.info(
-            "[Acknowledging radio check]: %s (channel %d, %s rssi, %s snr): %s",
-            name,
-            channel,
-            rssi,
-            snr,
-            text,
+            "Acknowledging radio check",
+            extra={
+                "name": name,
+                "channel": channel,
+                "rssi": rssi,
+                "snr": snr,
+                "text": text,
+            },
         )
 
         interface.sendText(self.getMessage(snr, rssi, name), channelIndex=channel)
@@ -166,7 +179,8 @@ class CheckMate:
         """Update the ID to name mapping"""
         self.users[user["id"]] = user["shortName"]
         self.logger.info(
-            "[Updating user identity] %s -> %s", user["id"], user["shortName"]
+            "Updating user identity",
+            extra={"id": user["id"], "shortName": user["shortName"]},
         )
 
     def isNodeInfo(self, packet):
@@ -206,13 +220,37 @@ class CheckMate:
         return "!" + hex(nodeId)[2:]
 
 
+# Basd on unit test here: https://github.com/madzak/python-json-logger/blob/5f85723f4693c7289724fdcda84cfc0b62da74d4/tests/test_jsonlogger.py#L87
+def getLogFormat():
+    supported_keys = [
+        "asctime",
+        "message",
+        "filename",
+        "funcName",
+        "levelname",
+        "lineno",
+    ]
+    log_format = lambda x: ["%({0:s})s".format(i) for i in x]
+    return " ".join(log_format(supported_keys))
+
+
 if __name__ == "__main__":
 
-    stdout_handler = logging.StreamHandler(stream=sys.stdout)
+    logHandler = logging.StreamHandler()
+    formatter = jsonlogger.JsonFormatter(
+        getLogFormat(),
+        rename_fields={
+            "asctime": "time",
+            "funcName": "function",
+            "levelname": "level",
+            "lineno": "line",
+        },
+        datefmt="%Y-%m-%dT%H:%M:%S.%fZ",
+    )
+    logHandler.setFormatter(formatter)
     logging.basicConfig(
         level=logging.INFO,
-        format="[%(asctime)s] {%(filename)s:%(lineno)d} %(levelname)s | %(message)s",
-        handlers=[stdout_handler],
+        handlers=[logHandler],
     )
 
     parser = argparse.ArgumentParser(
