@@ -245,7 +245,7 @@ if __name__ == "__main__":
             "levelname": "level",
             "lineno": "line",
         },
-        datefmt="%Y-%m-%dT%H:%M:%S.%fZ",
+        datefmt="%Y-%m-%dT%H:%M:%SZ",
     )
     logHandler.setFormatter(formatter)
     logging.basicConfig(
