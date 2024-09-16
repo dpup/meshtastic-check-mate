@@ -90,14 +90,14 @@ class CheckMate:
                 if channel == 0:
                     self.logger.info(
                         "Ignoring message to default channel",
-                        extra={"name": name, "text": text},
+                        extra={"userName": name, "text": text},
                     )
                     return
 
                 if not re.search(r"(mesh|radio)\s*check", text, re.IGNORECASE):
                     self.logger.info(
                         "Not a radio check",
-                        extra={"name": name, "channel": channel, "text": text},
+                        extra={"userName": name, "channel": channel, "text": text},
                     )
                     return
 
