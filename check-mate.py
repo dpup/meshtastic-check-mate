@@ -13,6 +13,15 @@ from pythonjsonlogger import jsonlogger
 import meshtastic
 import meshtastic.tcp_interface
 
+from status import readStatus, writeStatus
+import json
+
+"""Max frequency with which to report healthchecks."""
+HEALTH_CHECK_THROTTLE = 60
+
+"""Max amount of time since radio traffic was received before we consider process unhealthy."""
+UNHEALTHY_TIMEOUT = 5 * 60
+
 
 class CheckMate:
     """Manages connection with meshtastic node, monitoring private channels and responds to radio checks"""
@@ -26,6 +35,10 @@ class CheckMate:
         self.lastHealthCheck = None
         self.healthCheckURL = healthCheckURL
         self.logger = logging.getLogger(__name__)
+        self.status = {
+            "status": "starting",
+            "start_time": time.time(),
+        }
 
         pub.subscribe(self.onReceive, "meshtastic.receive")
         pub.subscribe(self.onConnect, "meshtastic.connection.established")
@@ -34,28 +47,46 @@ class CheckMate:
     def start(self):
         """Start the connection and listen for incoming messages"""
 
-        while True:
-            try:
-                self.logger.info("Connecting...", extra={"host": self.host})
-                self.connected = True
-                self.iface = meshtastic.tcp_interface.TCPInterface(hostname=self.host)
+        try:
+
+            while True:
                 try:
+                    self.logger.info("Connecting...", extra={"host": self.host})
+                    self.connected = True
+                    self.iface = meshtastic.tcp_interface.TCPInterface(
+                        hostname=self.host
+                    )
                     while self.connected:
                         time.sleep(5)
-                except KeyboardInterrupt:
-                    # On keyboard interrupt, close the connection and exit.
-                    self.logger.info("Shutting down...", extra={"host": self.host})
-                    self.iface.close()
-                    return 0
+                        if (
+                            time.time() - self.status["last_device_ping"]
+                            > UNHEALTHY_TIMEOUT
+                        ):
+                            self.setStatus("unknown")
 
-            except Exception as ex:
-                self.logger.error(
-                    "Error with connection: %s",
-                    ex,
-                    extra={"host": self.host, "error": ex},
-                )
-                self.logger.info("Retrying in 5 seconds...")
-                time.sleep(5)
+                except Exception as ex:
+                    self.logger.error(
+                        "Error with connection: %s",
+                        ex,
+                        extra={"host": self.host, "error": ex},
+                    )
+                    self.logger.info("Retrying in 5 seconds...")
+                    self.setStatus("restarting")
+                    time.sleep(5)
+
+        except KeyboardInterrupt:
+            self.logger.info("Shutting down...", extra={"host": self.host})
+            self.setStatus("shutdown")
+            return 0
+
+    def setStatus(self, status, ping=False):
+        """updates current status"""
+        self.status["status"] = status
+        self.status["update_time"] = time.time()
+        self.status["user_count"] = len(self.users)
+        if ping:
+            self.status["last_device_ping"] = time.time()
+        writeStatus(self.status)
 
     def onConnect(self, interface, topic=pub.AUTO_TOPIC):
         """called when we (re)connect to the radio"""
@@ -63,16 +94,19 @@ class CheckMate:
             for node in interface.nodes.values():
                 self.updateUser(node["user"])
         self.logger.info("Connected...")
+        self.setStatus("connected", ping=True)
 
     def onDisconnect(self, interface, topic=pub.AUTO_TOPIC):
         """called when we disconnect from the radio"""
         self.logger.info("Disconnected... waiting for reconnect...")
         self.connected = False
+        self.setStatus("disconnected")
 
     def onReceive(self, packet, interface):
         """called when a packet arrives"""
 
         self.reportHealth()
+        self.setStatus("active", ping=True)
 
         try:
             if self.isNodeInfo(packet):
@@ -113,7 +147,10 @@ class CheckMate:
 
     def reportHealth(self):
         if self.healthCheckURL is not None:
-            if self.lastHealthCheck is None or time.time() - self.lastHealthCheck > 60:
+            if (
+                self.lastHealthCheck is None
+                or time.time() - self.lastHealthCheck > HEALTH_CHECK_THROTTLE
+            ):
                 self.lastHealthCheck = time.time()
                 response = requests.head(self.healthCheckURL)
                 if response.status_code == 200:
@@ -259,6 +296,13 @@ if __name__ == "__main__":
         epilog="Example: python3 check-mate.py --host meshtastic.local --location 'Base Camp' --healthcheck https://uptime.betterstack.com/api/v1/heartbeat/deadbeef",
     )
     parser.add_argument(
+        "--status",
+        action="store_true",
+        dest="status",
+        required=False,
+        help="Get status of the current check-mate process",
+    )
+    parser.add_argument(
         "--host",
         dest="host",
         required=False,
@@ -281,6 +325,14 @@ if __name__ == "__main__":
         default=os.environ.get("HEALTHCHECKURL"),
     )
     args = parser.parse_args()
+
+    if args.status:
+        status = readStatus()
+        print(json.dumps(status))
+        if status["status"] == "active":
+            sys.exit(0)
+        else:
+            sys.exit(1)
 
     if not args.host:
         parser.error(

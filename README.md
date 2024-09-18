@@ -35,6 +35,7 @@ Then in a private channel on a different node to the one connected to `check-mat
 | --host        | HOST           | The IP or hostname of the meshtastic node, e.g. `192.168.5.10`     |
 | --location    | LOCATION       | Text description of where your node is, e.g. `SF Mission District` |
 | --healthcheck | HEALTHCHECKURL | URL to send healthcheck pings to when receiving messages           |
+| --status      | N/A            | Print JSON of latest status                                        |
 
 ## Example radio check
 
