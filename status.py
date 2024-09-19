@@ -4,29 +4,35 @@ from typing import Dict
 import json
 
 
-def getStatusFilePath() -> Path:
-    """Determine the appropriate status file path based on the OS."""
-    if platform.system() == "Darwin":  # macOS
-        base_dir = Path.home() / "Library" / "Application Support" / "check-mate"
-    else:  # Linux and others
-        base_dir = Path.home() / ".local" / "share" / "check-mate"
+class StatusManager:
+    def __init__(self, baseDir=None):
+        if baseDir is None or baseDir == "":
+            if platform.system() == "Darwin":  # macOS
+                self.baseDir = (
+                    Path.home() / "Library" / "Application Support" / "check-mate"
+                )
+            else:  # Linux and others
+                self.baseDir = Path.home() / ".local" / "share" / "check-mate"
+        else:
+            self.baseDir = Path(baseDir)
 
-    base_dir.mkdir(parents=True, exist_ok=True)
-    return base_dir / "status.json"
+        self.baseDir.mkdir(parents=True, exist_ok=True)
+        self.statusFile = self.baseDir / "status.json"
 
+    def writeStatus(self, status: Dict[str, any]):
+        """Write the current status to the status file."""
+        with open(self.statusFile, "w") as f:
+            json.dump(status, f)
 
-STATUS_FILE = getStatusFilePath()
+    def readStatus(self) -> Dict[str, any]:
+        """Read the current status from the status file."""
+        if not self.statusFile.exists():
+            return {"status": "unknown"}
+        with open(self.statusFile, "r") as f:
+            return json.load(f)
 
-
-def writeStatus(status: Dict[str, any]):
-    """Write the current status to the status file."""
-    with open(STATUS_FILE, "w") as f:
-        json.dump(status, f)
-
-
-def readStatus() -> Dict[str, any]:
-    """Read the current status from the status file."""
-    if not STATUS_FILE.exists():
-        return {"status": "unknown"}
-    with open(STATUS_FILE, "r") as f:
-        return json.load(f)
+    def dump(self):
+        """Print the status file."""
+        status = self.readStatus()
+        print(json.dumps(status))
+        return 0 if status["status"] == "active" else 1

@@ -13,7 +13,7 @@ from pythonjsonlogger import jsonlogger
 import meshtastic
 import meshtastic.tcp_interface
 
-from status import readStatus, writeStatus
+from status import StatusManager
 import json
 
 """Max frequency with which to report healthchecks."""
@@ -26,14 +26,16 @@ UNHEALTHY_TIMEOUT = 5 * 60
 class CheckMate:
     """Manages connection with meshtastic node, monitoring private channels and responds to radio checks"""
 
-    def __init__(self, host, location=None, healthCheckURL=None):
+    def __init__(self, statusManager, host, location, healthCheckURL):
+        self.statusManager = statusManager
         self.host = host
         self.location = location
+        self.healthCheckURL = healthCheckURL
+        self.lastHealthCheck = None
+
         self.users = {}
         self.iface = None
         self.connected = False
-        self.lastHealthCheck = None
-        self.healthCheckURL = healthCheckURL
         self.logger = logging.getLogger(__name__)
         self.status = {
             "status": "starting",
@@ -86,7 +88,7 @@ class CheckMate:
         self.status["user_count"] = len(self.users)
         if ping:
             self.status["last_device_ping"] = time.time()
-        writeStatus(self.status)
+        self.statusManager.writeStatus(self.status)
 
     def onConnect(self, interface, topic=pub.AUTO_TOPIC):
         """called when we (re)connect to the radio"""
@@ -303,6 +305,13 @@ if __name__ == "__main__":
         help="Get status of the current check-mate process",
     )
     parser.add_argument(
+        "--status-dir",
+        dest="statusDir",
+        required=False,
+        help="Override default location of the status dir",
+        default=os.environ.get("STATUS_DIR"),
+    )
+    parser.add_argument(
         "--host",
         dest="host",
         required=False,
@@ -326,18 +335,15 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
+    statusManager = StatusManager(args.statusDir)
+
     if args.status:
-        status = readStatus()
-        print(json.dumps(status))
-        if status["status"] == "active":
-            sys.exit(0)
-        else:
-            sys.exit(1)
+        sys.exit(statusManager.dump())
 
     if not args.host:
         parser.error(
             "Please provide a host via --host or the $HOST environment variable"
         )
 
-    checkmate = CheckMate(args.host, args.location, args.healthCheckURL)
+    checkmate = CheckMate(statusManager, args.host, args.location, args.healthCheckURL)
     sys.exit(checkmate.start())
