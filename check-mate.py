@@ -14,7 +14,9 @@ import meshtastic
 import meshtastic.tcp_interface
 
 from status import StatusManager
-import json
+from quality import classifyQuality
+from radiocheck import getResponse
+
 
 """Max frequency with which to report healthchecks."""
 HEALTH_CHECK_THROTTLE = 60
@@ -141,10 +143,18 @@ class CheckMate:
                 return
 
         except Exception as ex:
+            excType, excObj, excTb = sys.exc_info()
+            fname = os.path.split(excTb.tb_frame.f_code.co_filename)[1]
+
             self.logger.warning(
                 "Error processing packet: %s",
                 ex,
-                extra={"packet": packet},
+                extra={
+                    "excType": excType,
+                    "excFilename": fname,
+                    "excLine": excTb.tb_lineno,
+                    "packet": packet,
+                },
             )
 
     def reportHealth(self):
@@ -168,51 +178,24 @@ class CheckMate:
         channel = self.getChannel(packet)
         snr = self.getSNR(packet)
         rssi = self.getRSSI(packet)
-        text = self.getText(packet)
         name = self.getName(packet, interface)
+
+        quality = classifyQuality(rssi, snr)
+        response = getResponse(quality.overall, name, self.location)
 
         self.logger.info(
             "Acknowledging radio check",
             extra={
-                "name": name,
+                "userName": name,
                 "channel": channel,
                 "rssi": rssi,
                 "snr": snr,
-                "text": text,
+                "quality": quality,
+                "response": response,
             },
         )
 
-        interface.sendText(self.getMessage(snr, rssi, name), channelIndex=channel)
-
-    def getMessage(self, snr, rssi, name):
-        """generate a random message to respond to a radio check"""
-        if self.location:
-            loc = self.location
-            quality = f"({rssi} RSSI, {snr} SNR)"
-            messages = [
-                f"{name}, read you 5 by 5 from {loc} {quality}",
-                f"👋 {name}, got you from {loc} {quality}",
-                f"Copy {name}, {snr} SNR & {rssi} RSSI from {loc}",
-                f"Hey {name}, message received from {loc} {quality}",
-                f"{name}, loud and clear from {loc} {quality}",
-                f"{name}, copy your radio check from {loc} {quality}",
-                f"{name}, copy from {loc} {quality}",
-                f"{name}, copy {snr} SNR & {rssi} RSSI from {loc}",
-            ]
-        else:
-            messages = [
-                f"{name}, read you 5 by 5",
-                f"Received your message, {name}",
-                f"Hey {name}, got your transmission",
-                f"{name}, your message is coming through",
-                f"Message received, {name}",
-                f"Received your message, {name}",
-                f"{name}, got your radio check",
-                f"Test received, {name}",
-                f"{name}, message received",
-                f"Got your message, {name}",
-            ]
-        return random.choice(messages)
+        interface.sendText(response, channelIndex=channel)
 
     def updateUser(self, user):
         """Update the ID to name mapping"""
