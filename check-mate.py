@@ -92,9 +92,9 @@ class CheckMate:
         self.logger.info("Sending probe...")
         # TODO: See if this is enough. Might want to actually send a test packet
         # though that could potentially add noise to the network.
-        self.iface.setStatus("probing")
+        self.setStatus("probing")
         self.iface.sendHeartbeat()
-        self.iface.setStatus("active", True)
+        self.setStatus("active", True)
         # self.iface.sendData("probe", portNum=portnums_pb2.PortNum.PRIVATE_APP)
 
     def setStatus(self, status, ping=False):
