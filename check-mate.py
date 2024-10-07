@@ -14,7 +14,7 @@ import meshtastic
 import meshtastic.tcp_interface
 from meshtastic.protobuf import portnums_pb2
 
-from status import StatusManager
+from status import StatusManager, Status
 from quality import classifyQuality
 from radiocheck import getResponse
 
@@ -71,7 +71,7 @@ class CheckMate:
                         if lastUpdate > PROBE_TIMEOUT:
                             self.sendProbe()
                         if lastUpdate > UNHEALTHY_TIMEOUT:
-                            self.setStatus("unknown")
+                            self.setStatus(Status.UNKNOWN)
 
                 except Exception as ex:
                     self.logger.error(
@@ -80,21 +80,21 @@ class CheckMate:
                         extra={"host": self.host, "error": ex},
                     )
                     self.logger.info("Retrying in 5 seconds...")
-                    self.setStatus("restarting")
+                    self.setStatus(Status.RESTARTING)
                     time.sleep(5)
 
         except KeyboardInterrupt:
             self.logger.info("Shutting down...", extra={"host": self.host})
-            self.setStatus("shutdown")
+            self.setStatus(Status.SHUTDOWN)
             return 0
 
     def sendProbe(self):
         self.logger.info("Sending probe...")
         # TODO: See if this is enough. Might want to actually send a test packet
         # though that could potentially add noise to the network.
-        self.setStatus("probing")
+        self.setStatus(Status.PROBING)
         self.iface.sendHeartbeat()
-        self.setStatus("active", True)
+        self.setStatus(Status.ACTIVE)
         # self.iface.sendData("probe", portNum=portnums_pb2.PortNum.PRIVATE_APP)
 
     def setStatus(self, status, ping=False):
@@ -113,19 +113,19 @@ class CheckMate:
             for node in interface.nodes.values():
                 self.updateUser(node["user"])
         self.logger.info("Connected...")
-        self.setStatus("connected", ping=True)
+        self.setStatus(Status.CONNECTED, ping=True)
 
     def onDisconnect(self, interface, topic=pub.AUTO_TOPIC):
         """called when we disconnect from the radio"""
         self.logger.info("Disconnected... waiting for reconnect...")
         self.connected = False
-        self.setStatus("disconnected")
+        self.setStatus(Status.DISCONNECTED)
 
     def onReceive(self, packet, interface):
         """called when a packet arrives"""
 
         self.reportHealth()
-        self.setStatus("active", ping=True)
+        self.setStatus(Status.ACTIVE, ping=True)
 
         # TODO: Turn this back off or demote to DEBUG level.
         extra = packet

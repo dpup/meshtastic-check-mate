@@ -2,7 +2,7 @@ from enum import Enum
 from dataclasses import dataclass
 
 
-class QualityLevel(Enum):
+class QualityLevel(str, Enum):
     EXCELLENT = "Excellent"
     VERY_GOOD = "Very Good"
     GOOD = "Good"

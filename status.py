@@ -1,7 +1,18 @@
+from enum import Enum
 import platform
 from pathlib import Path
 from typing import Dict
 import json
+
+
+class Status(str, Enum):
+    UNKNOWN = "unknown"
+    CONNECTED = "connected"
+    ACTIVE = "active"
+    DISCONNECTED = "disconnected"
+    PROBING = "probing"
+    RESTARTING = "restarting"
+    SHUTDOWN = "shutdown"
 
 
 class StatusManager:
@@ -27,7 +38,7 @@ class StatusManager:
     def readStatus(self) -> Dict[str, any]:
         """Read the current status from the status file."""
         if not self.statusFile.exists():
-            return {"status": "unknown"}
+            return {"status": Status.UNKNOWN}
         with open(self.statusFile, "r") as f:
             return json.load(f)
 
@@ -35,4 +46,4 @@ class StatusManager:
         """Print the status file."""
         status = self.readStatus()
         print(json.dumps(status))
-        return 0 if status["status"] == "active" else 1
+        return 0 if status["status"] == Status.ACTIVE else 1
