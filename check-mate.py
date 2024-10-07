@@ -12,6 +12,7 @@ from pythonjsonlogger import jsonlogger
 
 import meshtastic
 import meshtastic.tcp_interface
+from meshtastic.protobuf import portnums_pb2
 
 from status import StatusManager
 from quality import classifyQuality
@@ -23,6 +24,9 @@ HEALTH_CHECK_THROTTLE = 60
 
 """Max amount of time since radio traffic was received before we consider process unhealthy."""
 UNHEALTHY_TIMEOUT = 5 * 60
+
+"""The amount of silence before we actively try to probe the device."""
+PROBE_TIMEOUT = 30
 
 
 class CheckMate:
@@ -50,22 +54,23 @@ class CheckMate:
 
     def start(self):
         """Start the connection and listen for incoming messages"""
-
+        isFirstRun = True
         try:
-
             while True:
                 try:
                     self.logger.info("Connecting...", extra={"host": self.host})
                     self.connected = True
                     self.iface = meshtastic.tcp_interface.TCPInterface(
-                        hostname=self.host
+                        hostname=self.host,
+                        noNodes=(not isFirstRun),
                     )
+                    isFirstRun = False
                     while self.connected:
                         time.sleep(5)
-                        if (
-                            time.time() - self.status["last_device_ping"]
-                            > UNHEALTHY_TIMEOUT
-                        ):
+                        lastUpdate = time.time() - self.status["update_time"]
+                        if lastUpdate > PROBE_TIMEOUT:
+                            self.sendProbe()
+                        if lastUpdate > UNHEALTHY_TIMEOUT:
                             self.setStatus("unknown")
 
                 except Exception as ex:
@@ -83,6 +88,15 @@ class CheckMate:
             self.setStatus("shutdown")
             return 0
 
+    def sendProbe(self):
+        self.logger.info("Sending probe...")
+        # TODO: See if this is enough. Might want to actually send a test packet
+        # though that could potentially add noise to the network.
+        self.iface.setStatus("probing")
+        self.iface.sendHeartbeat()
+        self.iface.setStatus("active", True)
+        # self.iface.sendData("probe", portNum=portnums_pb2.PortNum.PRIVATE_APP)
+
     def setStatus(self, status, ping=False):
         """updates current status"""
         self.status["status"] = status
@@ -90,6 +104,7 @@ class CheckMate:
         self.status["user_count"] = len(self.users)
         if ping:
             self.status["last_device_ping"] = time.time()
+        self.logger.info("Status updated", extra=self.status)
         self.statusManager.writeStatus(self.status)
 
     def onConnect(self, interface, topic=pub.AUTO_TOPIC):
@@ -111,6 +126,14 @@ class CheckMate:
 
         self.reportHealth()
         self.setStatus("active", ping=True)
+
+        # TODO: Turn this back off or demote to DEBUG level.
+        extra = packet
+        if "decoded" in packet:
+            extra = packet["decoded"]
+            if "payload" in extra:
+                del extra["payload"]
+        self.logger.info("Received packet", extra=extra)
 
         try:
             if self.isNodeInfo(packet):
