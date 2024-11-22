@@ -182,19 +182,31 @@ class CheckMate:
 
     def reportHealth(self):
         if self.healthCheckURL is not None:
+            timeSinceLastHealthcheck = time.time() - self.lastHealthCheck
             if (
                 self.lastHealthCheck is None
-                or time.time() - self.lastHealthCheck > HEALTH_CHECK_THROTTLE
+                or timeSinceLastHealthcheck > HEALTH_CHECK_THROTTLE
             ):
                 self.lastHealthCheck = time.time()
                 response = requests.head(self.healthCheckURL)
                 if response.status_code == 200:
-                    self.logger.info("Healthcheck ❤️")
+                    self.logger.info(
+                        "Health check posted",
+                        extra={
+                            "responseBody": response.text,
+                            "responseText": response.headers,
+                        },
+                    )
                 else:
                     self.logger.warning(
-                        "Healthcheck failed",
+                        "Health check failed",
                         extra={"statusCode": response.status_code},
                     )
+            else:
+                self.logger.info(
+                    "Health check skipped",
+                    extra={"timeSinceLastHealthcheck": timeSinceLastHealthcheck},
+                )
 
     def ackRadioCheck(self, packet, interface):
         """Respond to a radio check"""
@@ -265,7 +277,7 @@ class CheckMate:
         return "!" + hex(nodeId)[2:]
 
 
-# Basd on unit test here: https://github.com/madzak/python-json-logger/blob/5f85723f4693c7289724fdcda84cfc0b62da74d4/tests/test_jsonlogger.py#L87
+# Based on unit test here: https://github.com/madzak/python-json-logger/blob/5f85723f4693c7289724fdcda84cfc0b62da74d4/tests/test_jsonlogger.py#L87
 def getLogFormat():
     supported_keys = [
         "asctime",
