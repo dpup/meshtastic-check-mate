@@ -7,10 +7,9 @@ and automatically responds to radio check requests with signal quality informati
 import argparse
 import logging
 import os
-import re
 import sys
 import time
-from typing import Dict, Optional, Any
+from typing import Dict, Optional, Any, List
 
 import requests
 from pubsub import pub
@@ -20,17 +19,12 @@ import meshtastic
 import meshtastic.tcp_interface
 
 from .status import StatusManager, Status
-from .quality import classify_quality
-from .radiocheck import get_response
-from .packet_utils import (
-    is_node_info, is_text_message, get_text, get_channel,
-    get_snr, get_rssi, get_name, id_to_hex
-)
+from .packet_utils import is_node_info, is_text_message, get_text, get_channel, get_name, id_to_hex
 from .constants import (
     MAX_HEALTH_CHECK_THROTTLE, UNHEALTHY_TIMEOUT, PROBE_TIMEOUT,
-    CONNECTION_RETRY_DELAY, RADIO_CHECK_PATTERN,
-    KEY_DECODED, KEY_USER, KEY_PAYLOAD, KEY_ID, KEY_SHORT_NAME
+    CONNECTION_RETRY_DELAY, KEY_DECODED, KEY_USER, KEY_PAYLOAD, KEY_ID, KEY_SHORT_NAME
 )
+from .responders import MessageResponder, RadioCheckResponder
 
 
 class CheckMate:
@@ -46,7 +40,8 @@ class CheckMate:
         status_manager: StatusManager, 
         host: str, 
         location: Optional[str] = None, 
-        health_check_url: Optional[str] = None
+        health_check_url: Optional[str] = None,
+        responders: Optional[List[MessageResponder]] = None
     ) -> None:
         """
         Initialize a new CheckMate instance.
@@ -56,6 +51,7 @@ class CheckMate:
             host: Hostname or IP address of the Meshtastic device
             location: Optional location identifier to include in responses
             health_check_url: Optional URL for external health checks
+            responders: Optional list of message responders in priority order
         """
         self.status_manager = status_manager
         self.host = host
@@ -63,6 +59,9 @@ class CheckMate:
         self.health_check_url = health_check_url
         self.last_health_check: Optional[float] = None
 
+        # Initialize default responders if none provided
+        self.responders = responders or [RadioCheckResponder()]
+        
         self.users: Dict[str, str] = {}
         self.iface = None
         self.connected = False
@@ -185,7 +184,8 @@ class CheckMate:
         """
         Handler called when a packet arrives.
         
-        Processes incoming packets, including node info updates and radio check requests.
+        Processes incoming packets, including node info updates and uses registered
+        responders to handle various message types.
         
         Args:
             packet: The received packet data
@@ -211,30 +211,32 @@ class CheckMate:
                     self.logger.info("Ignoring missing user", extra={"packet": packet})
                 return
 
-            # Process text messages for radio checks
+            # Try each responder in order until one handles the packet
+            for responder in self.responders:
+                if responder.can_handle(packet):
+                    self.logger.debug(
+                        "Handling packet with responder",
+                        extra={"responder": responder.__class__.__name__}
+                    )
+                    responder.handle(packet, interface, self.users, self.location)
+                    return
+
+            # Log if no responder handled the packet
             if is_text_message(packet):
                 channel = get_channel(packet)
                 text = get_text(packet)
                 name = get_name(packet, self.users, id_to_hex)
-
-                # Ignore messages on the default channel
+                
                 if channel == 0:
                     self.logger.info(
                         "Ignoring message to default channel",
                         extra={"userName": name, "text": text},
                     )
-                    return
-
-                # Check if it's a radio check request
-                if not re.search(RADIO_CHECK_PATTERN, text, re.IGNORECASE):
+                else:
                     self.logger.info(
-                        "Not a radio check",
+                        "No responder handled message",
                         extra={"userName": name, "channel": channel, "text": text},
                     )
-                    return
-
-                self.ack_radio_check(packet, interface)
-                return
 
         except Exception as ex:
             exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -296,37 +298,6 @@ class CheckMate:
                 extra={"timeSinceLastHealthcheck": time_since_last_healthcheck},
             )
 
-    def ack_radio_check(self, packet: Dict[str, Any], interface) -> None:
-        """
-        Respond to a radio check request.
-        
-        Analyzes signal quality and sends appropriate response on the same channel.
-        
-        Args:
-            packet: The radio check request packet
-            interface: The interface to use for the response
-        """
-        channel = get_channel(packet)
-        snr = get_snr(packet)
-        rssi = get_rssi(packet)
-        name = get_name(packet, self.users, id_to_hex)
-
-        quality = classify_quality(rssi, snr)
-        response = get_response(quality.overall, name, self.location)
-
-        self.logger.info(
-            "Acknowledging radio check",
-            extra={
-                "userName": name,
-                "channel": channel,
-                "rssi": rssi,
-                "snr": snr,
-                "quality": str(quality),
-                "response": response,
-            },
-        )
-
-        interface.sendText(response, channelIndex=channel)
 
     def update_user(self, user: Dict[str, Any]) -> None:
         """
@@ -450,8 +421,17 @@ def main() -> int:
             "Please provide a host via --host or the $HOST environment variable"
         )
 
+    # Setup default responders
+    responders = [RadioCheckResponder()]
+    
     # Start the application
-    checkmate = CheckMate(status_manager, args.host, args.location, args.health_check_url)
+    checkmate = CheckMate(
+        status_manager, 
+        args.host, 
+        args.location, 
+        args.health_check_url,
+        responders=responders
+    )
     return checkmate.start()
 
 

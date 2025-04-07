@@ -14,11 +14,13 @@ class TestCheckMate(unittest.TestCase):
         self.host = "test.local"
         self.location = "Test Location"
         self.health_check_url = "https://example.com/healthcheck"
+        self.mock_responder = MagicMock()
         self.checkmate = CheckMate(
             self.mock_status_manager, 
             self.host, 
             self.location, 
-            self.health_check_url
+            self.health_check_url,
+            responders=[self.mock_responder]
         )
 
     def test_init(self):
@@ -31,11 +33,20 @@ class TestCheckMate(unittest.TestCase):
         self.assertIsNone(self.checkmate.iface)
         self.assertIsNone(self.checkmate.last_health_check)
         self.assertEqual(self.checkmate.status["status"], "starting")
+        self.assertEqual(len(self.checkmate.responders), 1)
+        self.assertEqual(self.checkmate.responders[0], self.mock_responder)
 
     def test_init_default_location(self):
         """Test initialization with default location."""
         checkmate = CheckMate(self.mock_status_manager, self.host)
         self.assertEqual(checkmate.location, "Unknown Location")
+        
+    def test_init_default_responders(self):
+        """Test initialization with default responders."""
+        from checkmate.responders.radiocheck import RadioCheckResponder
+        checkmate = CheckMate(self.mock_status_manager, self.host)
+        self.assertEqual(len(checkmate.responders), 1)
+        self.assertIsInstance(checkmate.responders[0], RadioCheckResponder)
 
     def test_set_status(self):
         """Test setting status updates internal state and calls status manager."""
@@ -160,6 +171,57 @@ class TestCheckMate(unittest.TestCase):
         # Should not update users dictionary
         self.checkmate.update_user(user_info)
         self.assertEqual(self.checkmate.users, {})
+        
+    @patch('checkmate.main.is_node_info')
+    def test_on_receive_responder_handling(self, mock_is_node_info):
+        """Test on_receive delegates to responders."""
+        # Setup
+        mock_is_node_info.return_value = False
+        self.mock_responder.can_handle.return_value = True
+        
+        interface = MagicMock()
+        packet = {"decoded": {}}
+        
+        # Call the method
+        self.checkmate.on_receive(packet, interface)
+        
+        # Verify
+        self.mock_responder.can_handle.assert_called_once_with(packet)
+        self.mock_responder.handle.assert_called_once_with(
+            packet, interface, self.checkmate.users, self.checkmate.location
+        )
+        
+    @patch('checkmate.main.is_node_info')
+    @patch('checkmate.main.is_text_message')
+    @patch('checkmate.main.get_channel')
+    @patch('checkmate.main.get_text')
+    @patch('checkmate.main.get_name')
+    def test_on_receive_no_responder(self, mock_get_name, mock_get_text, 
+                                   mock_get_channel, mock_is_text_message, 
+                                   mock_is_node_info):
+        """Test on_receive behavior when no responder handles the packet."""
+        # Setup
+        mock_is_node_info.return_value = False
+        mock_is_text_message.return_value = True
+        mock_get_channel.return_value = 1  # Non-default channel
+        mock_get_text.return_value = "Hello world"
+        mock_get_name.return_value = "Test User"
+        
+        self.mock_responder.can_handle.return_value = False
+        
+        interface = MagicMock()
+        packet = {"decoded": {}}
+        
+        # Call the method
+        self.checkmate.on_receive(packet, interface)
+        
+        # Verify
+        self.mock_responder.can_handle.assert_called_once_with(packet)
+        self.mock_responder.handle.assert_not_called()
+        mock_is_text_message.assert_called_once_with(packet)
+        mock_get_channel.assert_called_once_with(packet)
+        mock_get_text.assert_called_once_with(packet)
+        mock_get_name.assert_called_once()
 
     @patch('checkmate.main.time.sleep', side_effect=KeyboardInterrupt)
     def test_start_keyboard_interrupt(self, mock_sleep):
