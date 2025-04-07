@@ -3,10 +3,14 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Commands
-- Run tests: `python -m unittest discover`
-- Run single test: `python -m unittest test_quality.TestQuality.test_excellent_quality`
-- Run main application: `python check-mate.py --host <device_ip> --location <location>`
-- Check status: `python check-mate.py --status`
+Always use the Makefile commands when performing operations to ensure the virtual environment is used correctly:
+
+- Setup: `make setup` (Creates virtual environment and installs dependencies)
+- Run tests: `make test` 
+- Run main application: `make run HOST=<device_ip>` (Set additional options as environment variables)
+- Check status: `make status`
+- Run linting: `make lint`
+- Clean project: `make clean`
 
 ## Code style
 - Use Python type hints for function parameters and return values

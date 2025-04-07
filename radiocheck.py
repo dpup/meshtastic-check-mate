@@ -20,7 +20,7 @@ RESPONSES: Dict[QualityLevel, List[str]] = {
         "Ack {name}, got a strong signal from {loc}",
     ],
     QualityLevel.VERY_GOOD: [
-        "reading you 5 by 5 {name} from {loc}",
+        "{name}, reading you 5 by 5 from {loc}",
         "Good copy {name}, from {loc}",
         "Ack {name}, got a strong signal from {loc}",
     ],
