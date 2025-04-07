@@ -1,11 +1,11 @@
 import unittest
-from radiocheck import getResponse
+from radiocheck import get_response
 from quality import QualityLevel
 
 
 class TestResponses(unittest.TestCase):
     def test_excellent_quality(self):
-        result = getResponse(QualityLevel.EXCELLENT, "Alice", "London")
+        result = get_response(QualityLevel.EXCELLENT, "Alice", "London")
         self.assertIn(
             result,
             [
@@ -16,7 +16,7 @@ class TestResponses(unittest.TestCase):
         )
 
     def test_very_good_quality(self):
-        result = getResponse(QualityLevel.VERY_GOOD, "Bob", "New York")
+        result = get_response(QualityLevel.VERY_GOOD, "Bob", "New York")
         self.assertIn(
             result,
             [
@@ -27,7 +27,7 @@ class TestResponses(unittest.TestCase):
         )
 
     def test_good_quality(self):
-        result = getResponse(QualityLevel.GOOD, "Charlie", "Paris")
+        result = get_response(QualityLevel.GOOD, "Charlie", "Paris")
         self.assertIn(
             result,
             [
@@ -38,7 +38,7 @@ class TestResponses(unittest.TestCase):
         )
 
     def test_fair_quality(self):
-        result = getResponse(QualityLevel.FAIR, "Dave", "Tokyo")
+        result = get_response(QualityLevel.FAIR, "Dave", "Tokyo")
         self.assertIn(
             result,
             [
@@ -49,7 +49,7 @@ class TestResponses(unittest.TestCase):
         )
 
     def test_poor_quality(self):
-        result = getResponse(QualityLevel.POOR, "Eve", "Sydney")
+        result = get_response(QualityLevel.POOR, "Eve", "Sydney")
         self.assertIn(
             result,
             [
@@ -60,7 +60,7 @@ class TestResponses(unittest.TestCase):
         )
 
     def test_very_poor_quality(self):
-        result = getResponse(QualityLevel.VERY_POOR, "Frank", "Berlin")
+        result = get_response(QualityLevel.VERY_POOR, "Frank", "Berlin")
         self.assertIn(
             result,
             [
@@ -71,7 +71,7 @@ class TestResponses(unittest.TestCase):
         )
 
     def test_unknown_quality(self):
-        result = getResponse("UNKNOWN", "Unknown", "Unknown")
+        result = get_response("UNKNOWN", "Unknown", "Unknown")
         self.assertEqual(result, "Hola!")
 
 

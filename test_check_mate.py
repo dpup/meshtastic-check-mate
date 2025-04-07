@@ -45,7 +45,7 @@ class TestCheckMate(unittest.TestCase):
         self.checkmate.set_status(Status.ACTIVE, ping=True)
         self.assertEqual(self.checkmate.status["status"], Status.ACTIVE)
         self.assertIn("last_device_ping", self.checkmate.status)
-        self.mock_status_manager.writeStatus.assert_called_once_with(self.checkmate.status)
+        self.mock_status_manager.write_status.assert_called_once_with(self.checkmate.status)
 
     def test_set_status_no_ping(self):
         """Test setting status without ping doesn't update ping timestamp."""
@@ -117,7 +117,7 @@ class TestCheckMate(unittest.TestCase):
             "user1": "User One",
             "user2": "User Two"
         })
-        self.mock_status_manager.writeStatus.assert_called_with(self.checkmate.status)
+        self.mock_status_manager.write_status.assert_called_with(self.checkmate.status)
         self.assertEqual(self.checkmate.status["status"], Status.CONNECTED)
 
     def test_on_connect_no_nodes(self):
@@ -128,7 +128,7 @@ class TestCheckMate(unittest.TestCase):
         self.checkmate.on_connect(mock_interface)
         
         self.assertEqual(self.checkmate.users, {})
-        self.mock_status_manager.writeStatus.assert_called_with(self.checkmate.status)
+        self.mock_status_manager.write_status.assert_called_with(self.checkmate.status)
         self.assertEqual(self.checkmate.status["status"], Status.CONNECTED)
 
     def test_on_disconnect(self):
@@ -139,7 +139,7 @@ class TestCheckMate(unittest.TestCase):
         self.checkmate.on_disconnect(mock_interface)
         
         self.assertFalse(self.checkmate.connected)
-        self.mock_status_manager.writeStatus.assert_called_with(self.checkmate.status)
+        self.mock_status_manager.write_status.assert_called_with(self.checkmate.status)
         self.assertEqual(self.checkmate.status["status"], Status.DISCONNECTED)
 
     def test_update_user(self):
@@ -170,7 +170,7 @@ class TestCheckMate(unittest.TestCase):
         result = self.checkmate.start()
         
         self.assertEqual(result, 0)
-        self.mock_status_manager.writeStatus.assert_called_with(self.checkmate.status)
+        self.mock_status_manager.write_status.assert_called_with(self.checkmate.status)
         self.assertEqual(self.checkmate.status["status"], Status.SHUTDOWN)
 
     @patch('check_mate.time.sleep')

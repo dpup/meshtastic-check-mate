@@ -53,7 +53,7 @@ DEFAULT_RESPONSE = "Hola!"
 logger = logging.getLogger(__name__)
 
 
-def getResponse(quality_level: QualityLevel, name: str, loc: str) -> str:
+def get_response(quality_level: QualityLevel, name: str, loc: str) -> str:
     """
     Generate an appropriate radio check response based on signal quality.
     

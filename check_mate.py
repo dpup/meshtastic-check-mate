@@ -21,8 +21,8 @@ import meshtastic.tcp_interface
 from meshtastic.protobuf import portnums_pb2
 
 from status import StatusManager, Status
-from quality import classifyQuality
-from radiocheck import getResponse
+from quality import classify_quality
+from radiocheck import get_response
 from packet_utils import (
     is_node_info, is_text_message, get_text, get_channel,
     get_snr, get_rssi, get_name, id_to_hex, extract_user_info
@@ -153,7 +153,7 @@ class CheckMate:
         if ping:
             self.status["last_device_ping"] = time.time()
         self.logger.info("Status updated", extra=self.status)
-        self.status_manager.writeStatus(self.status)
+        self.status_manager.write_status(self.status)
 
     def on_connect(self, interface, topic=pub.AUTO_TOPIC) -> None:
         """
@@ -310,8 +310,8 @@ class CheckMate:
         rssi = get_rssi(packet)
         name = get_name(packet, self.users, id_to_hex)
 
-        quality = classifyQuality(rssi, snr)
-        response = getResponse(quality.overall, name, self.location)
+        quality = classify_quality(rssi, snr)
+        response = get_response(quality.overall, name, self.location)
 
         self.logger.info(
             "Acknowledging radio check",

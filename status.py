@@ -78,7 +78,7 @@ class StatusManager:
             logger.error(f"Error setting up status directory: {e}")
             raise
 
-    def writeStatus(self, status: Dict[str, Any]) -> None:
+    def write_status(self, status: Dict[str, Any]) -> None:
         """
         Write the current status to the status file.
         
@@ -96,7 +96,7 @@ class StatusManager:
             logger.error(f"Error writing status file: {e}")
             raise
 
-    def readStatus(self) -> Dict[str, Any]:
+    def read_status(self) -> Dict[str, Any]:
         """
         Read the current status from the status file.
         
@@ -128,6 +128,6 @@ class StatusManager:
         Returns:
             0 if status is ACTIVE, 1 otherwise (for use as process exit code)
         """
-        status = self.readStatus()
+        status = self.read_status()
         print(json.dumps(status))
         return 0 if status.get("status") == Status.ACTIVE else 1

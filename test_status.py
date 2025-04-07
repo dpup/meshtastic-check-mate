@@ -119,7 +119,7 @@ class TestStatusManager(unittest.TestCase):
             "update_time": 123456789.0,
             "user_count": 5
         }
-        self.status_manager.writeStatus(status_data)
+        self.status_manager.write_status(status_data)
         mock_file.assert_called_once_with(self.status_manager.status_file, 'w')
         mock_json_dump.assert_called_once_with(status_data, mock_file())
 
@@ -128,21 +128,21 @@ class TestStatusManager(unittest.TestCase):
         """Test error handling when writing status file fails."""
         status_data = {"status": Status.ACTIVE}
         with self.assertRaises(IOError):
-            self.status_manager.writeStatus(status_data)
+            self.status_manager.write_status(status_data)
 
     @patch('builtins.open', side_effect=PermissionError("Test Permission Error"))
     def test_write_status_permission_error(self, mock_file):
         """Test error handling when writing status file lacks permissions."""
         status_data = {"status": Status.ACTIVE}
         with self.assertRaises(PermissionError):
-            self.status_manager.writeStatus(status_data)
+            self.status_manager.write_status(status_data)
 
     @patch('pathlib.Path.exists')
     @patch('builtins.open', new_callable=mock_open, read_data='{"status": "active"}')
     def test_read_status(self, mock_file, mock_exists):
         """Test reading status from file."""
         mock_exists.return_value = True
-        status = self.status_manager.readStatus()
+        status = self.status_manager.read_status()
         self.assertEqual(status, {"status": "active"})
         mock_file.assert_called_once_with(self.status_manager.status_file, 'r')
 
@@ -150,7 +150,7 @@ class TestStatusManager(unittest.TestCase):
     def test_read_status_file_not_found(self, mock_exists):
         """Test handling when status file doesn't exist."""
         mock_exists.return_value = False
-        status = self.status_manager.readStatus()
+        status = self.status_manager.read_status()
         self.assertEqual(status, {"status": Status.UNKNOWN})
 
     @patch('pathlib.Path.exists')
@@ -158,7 +158,7 @@ class TestStatusManager(unittest.TestCase):
     def test_read_status_io_error(self, mock_file, mock_exists):
         """Test error handling when reading status file fails."""
         mock_exists.return_value = True
-        status = self.status_manager.readStatus()
+        status = self.status_manager.read_status()
         self.assertEqual(status, {"status": Status.UNKNOWN})
 
     @patch('pathlib.Path.exists')
@@ -167,12 +167,12 @@ class TestStatusManager(unittest.TestCase):
         """Test error handling with invalid JSON in status file."""
         mock_exists.return_value = True
         with self.assertRaises(json.JSONDecodeError):
-            self.status_manager.readStatus()
+            self.status_manager.read_status()
 
     @patch('builtins.print')
     def test_dump_active(self, mock_print):
         """Test dump method with active status."""
-        with patch.object(StatusManager, 'readStatus') as mock_read:
+        with patch.object(StatusManager, 'read_status') as mock_read:
             mock_read.return_value = {"status": Status.ACTIVE}
             exit_code = self.status_manager.dump()
             self.assertEqual(exit_code, 0)
@@ -181,7 +181,7 @@ class TestStatusManager(unittest.TestCase):
     @patch('builtins.print')
     def test_dump_inactive(self, mock_print):
         """Test dump method with inactive status."""
-        with patch.object(StatusManager, 'readStatus') as mock_read:
+        with patch.object(StatusManager, 'read_status') as mock_read:
             mock_read.return_value = {"status": Status.SHUTDOWN}
             exit_code = self.status_manager.dump()
             self.assertEqual(exit_code, 1)

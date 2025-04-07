@@ -74,7 +74,7 @@ def classify_metric(value: float, thresholds: List[Tuple[float, QualityLevel]]) 
     return QualityLevel.VERY_POOR
 
 
-def classifyQuality(rssi: float, snr: float) -> SignalQuality:
+def classify_quality(rssi: float, snr: float) -> SignalQuality:
     """
     Classify radio signal quality based on RSSI and SNR values.
     
