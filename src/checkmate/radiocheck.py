@@ -8,7 +8,7 @@ import random
 import logging
 from typing import Dict, List, Optional
 
-from quality import QualityLevel
+from .quality import QualityLevel
 
 
 # Mapping of quality levels to appropriate response templates

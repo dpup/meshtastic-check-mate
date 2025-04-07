@@ -4,7 +4,7 @@ import tempfile
 import os
 from pathlib import Path
 from unittest.mock import patch, mock_open
-from status import StatusManager, Status
+from checkmate.status import StatusManager, Status
 
 
 class TestStatusManager(unittest.TestCase):
@@ -33,16 +33,16 @@ class TestStatusManager(unittest.TestCase):
         with self.assertRaises(PermissionError):
             StatusManager(self.temp_dir)
 
-    @patch('status.platform.system')
+    @patch('checkmate.status.platform.system')
     @patch('pathlib.Path.mkdir')
     def test_init_with_default_dir_darwin(self, mock_mkdir, mock_system):
         """Test initialization with default directory on macOS."""
         mock_system.return_value = 'Darwin'
-        with patch('status.Path.home') as mock_home:
+        with patch('checkmate.status.Path.home') as mock_home:
             home_dir = Path('/Users/testuser')
             mock_home.return_value = home_dir
             # Completely mock the DEFAULT_STATUS_PATHS dictionary
-            with patch('status.DEFAULT_STATUS_PATHS', {
+            with patch('checkmate.status.DEFAULT_STATUS_PATHS', {
                 'Darwin': home_dir / 'Library' / 'Application Support' / 'check-mate',
                 'Linux': home_dir / '.local' / 'share' / 'check-mate',
                 'Windows': home_dir / 'AppData' / 'Local' / 'check-mate',
@@ -52,16 +52,16 @@ class TestStatusManager(unittest.TestCase):
                 self.assertEqual(manager.base_dir, expected_dir)
                 mock_mkdir.assert_called_once_with(parents=True, exist_ok=True)
 
-    @patch('status.platform.system')
+    @patch('checkmate.status.platform.system')
     @patch('pathlib.Path.mkdir')
     def test_init_with_default_dir_linux(self, mock_mkdir, mock_system):
         """Test initialization with default directory on Linux."""
         mock_system.return_value = 'Linux'
-        with patch('status.Path.home') as mock_home:
+        with patch('checkmate.status.Path.home') as mock_home:
             home_dir = Path('/home/testuser')
             mock_home.return_value = home_dir
             # Completely mock the DEFAULT_STATUS_PATHS dictionary
-            with patch('status.DEFAULT_STATUS_PATHS', {
+            with patch('checkmate.status.DEFAULT_STATUS_PATHS', {
                 'Darwin': home_dir / 'Library' / 'Application Support' / 'check-mate',
                 'Linux': home_dir / '.local' / 'share' / 'check-mate',
                 'Windows': home_dir / 'AppData' / 'Local' / 'check-mate',
@@ -71,16 +71,16 @@ class TestStatusManager(unittest.TestCase):
                 self.assertEqual(manager.base_dir, expected_dir)
                 mock_mkdir.assert_called_once_with(parents=True, exist_ok=True)
 
-    @patch('status.platform.system')
+    @patch('checkmate.status.platform.system')
     @patch('pathlib.Path.mkdir')
     def test_init_with_default_dir_windows(self, mock_mkdir, mock_system):
         """Test initialization with default directory on Windows."""
         mock_system.return_value = 'Windows'
-        with patch('status.Path.home') as mock_home:
+        with patch('checkmate.status.Path.home') as mock_home:
             home_dir = Path('C:/Users/testuser')
             mock_home.return_value = home_dir
             # Completely mock the DEFAULT_STATUS_PATHS dictionary
-            with patch('status.DEFAULT_STATUS_PATHS', {
+            with patch('checkmate.status.DEFAULT_STATUS_PATHS', {
                 'Darwin': home_dir / 'Library' / 'Application Support' / 'check-mate',
                 'Linux': home_dir / '.local' / 'share' / 'check-mate',
                 'Windows': home_dir / 'AppData' / 'Local' / 'check-mate',
@@ -90,16 +90,16 @@ class TestStatusManager(unittest.TestCase):
                 self.assertEqual(manager.base_dir, expected_dir)
                 mock_mkdir.assert_called_once_with(parents=True, exist_ok=True)
 
-    @patch('status.platform.system')
+    @patch('checkmate.status.platform.system')
     @patch('pathlib.Path.mkdir')
     def test_init_with_empty_string_dir(self, mock_mkdir, mock_system):
         """Test initialization with an empty string directory."""
         mock_system.return_value = 'Linux'
-        with patch('status.Path.home') as mock_home:
+        with patch('checkmate.status.Path.home') as mock_home:
             home_dir = Path('/home/testuser')
             mock_home.return_value = home_dir
             # Completely mock the DEFAULT_STATUS_PATHS dictionary
-            with patch('status.DEFAULT_STATUS_PATHS', {
+            with patch('checkmate.status.DEFAULT_STATUS_PATHS', {
                 'Darwin': home_dir / 'Library' / 'Application Support' / 'check-mate',
                 'Linux': home_dir / '.local' / 'share' / 'check-mate',
                 'Windows': home_dir / 'AppData' / 'Local' / 'check-mate',

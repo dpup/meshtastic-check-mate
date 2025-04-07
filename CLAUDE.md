@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Always use the Makefile commands when performing operations to ensure the virtual environment is used correctly:
 
 - Setup: `make setup` (Creates virtual environment and installs dependencies)
+- Install: `make install` (Installs the package)
+- Developer install: `make develop` (Installs the package with dev dependencies)
 - Run tests: `make test` 
 - Run main application: `make run HOST=<device_ip>` (Set additional options as environment variables)
 - Check status: `make status`

@@ -6,3 +6,8 @@ venv/
 **/.env
 **/.envrc
 TODO
+
+# Python package metadata
+*.egg-info/
+build/
+dist/

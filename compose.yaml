@@ -1,5 +1,10 @@
 services:
-  server:
+  check-mate:
     build:
       context: .
       dockerfile: Dockerfile
+    environment:
+      - HOST=${HOST}
+      - LOCATION=${LOCATION:-Unknown}
+      - HEALTHCHECKURL=${HEALTHCHECKURL:-}
+    restart: unless-stopped

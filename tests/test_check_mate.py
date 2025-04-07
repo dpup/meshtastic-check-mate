@@ -3,9 +3,9 @@ from unittest.mock import patch, MagicMock, call
 import json
 import time
 import requests
-from check_mate import CheckMate
-from status import StatusManager, Status
-from constants import KEY_DECODED, KEY_USER
+from checkmate.main import CheckMate
+from checkmate.status import StatusManager, Status
+from checkmate.constants import KEY_DECODED, KEY_USER
 
 
 class TestCheckMate(unittest.TestCase):
@@ -53,7 +53,7 @@ class TestCheckMate(unittest.TestCase):
         self.assertEqual(self.checkmate.status["status"], Status.ACTIVE)
         self.assertNotIn("last_device_ping", self.checkmate.status)
 
-    @patch('check_mate.requests.head')
+    @patch('checkmate.main.requests.head')
     def test_report_health_success(self, mock_head):
         """Test successful health check report."""
         mock_response = MagicMock()
@@ -64,7 +64,7 @@ class TestCheckMate(unittest.TestCase):
         mock_head.assert_called_once_with(self.health_check_url, timeout=10)
         self.assertIsNotNone(self.checkmate.last_health_check)
 
-    @patch('check_mate.requests.head')
+    @patch('checkmate.main.requests.head')
     def test_report_health_failure(self, mock_head):
         """Test failed health check report."""
         mock_response = MagicMock()
@@ -75,14 +75,14 @@ class TestCheckMate(unittest.TestCase):
         mock_head.assert_called_once_with(self.health_check_url, timeout=10)
         self.assertIsNotNone(self.checkmate.last_health_check)
 
-    @patch('check_mate.requests.head', side_effect=requests.RequestException("Test exception"))
+    @patch('checkmate.main.requests.head', side_effect=requests.RequestException("Test exception"))
     def test_report_health_exception(self, mock_head):
         """Test health check report with exception."""
         self.checkmate.report_health()
         mock_head.assert_called_once_with(self.health_check_url, timeout=10)
         self.assertIsNotNone(self.checkmate.last_health_check)
 
-    @patch('check_mate.time.time')
+    @patch('checkmate.main.time.time')
     def test_report_health_throttling(self, mock_time):
         """Test health check throttling."""
         # Set up a recent health check
@@ -164,7 +164,7 @@ class TestCheckMate(unittest.TestCase):
         self.checkmate.update_user(user_info)
         self.assertEqual(self.checkmate.users, {})
 
-    @patch('check_mate.time.sleep', side_effect=KeyboardInterrupt)
+    @patch('checkmate.main.time.sleep', side_effect=KeyboardInterrupt)
     def test_start_keyboard_interrupt(self, mock_sleep):
         """Test graceful shutdown on keyboard interrupt."""
         result = self.checkmate.start()
@@ -173,7 +173,7 @@ class TestCheckMate(unittest.TestCase):
         self.mock_status_manager.write_status.assert_called_with(self.checkmate.status)
         self.assertEqual(self.checkmate.status["status"], Status.SHUTDOWN)
 
-    @patch('check_mate.time.sleep')
+    @patch('checkmate.main.time.sleep')
     def test_keyboard_interrupt_during_loop(self, mock_sleep):
         """Test handling keyboard interrupt during the main loop."""
         # First sleep is fine, second raises KeyboardInterrupt

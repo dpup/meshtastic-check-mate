@@ -2,5 +2,8 @@ meshtastic==2.5.1
 pubsub==0.1.2
 python-json-logger==2.0.7
 requests>=2.31.0
-flake8>=6.0.0
-pytest>=7.0.0
+
+# Development dependencies - use with pip install -e ".[dev]"
+pytest>=7.0.0; extra == 'dev'
+flake8>=6.0.0; extra == 'dev'
+pytest-cov>=4.0.0; extra == 'dev'

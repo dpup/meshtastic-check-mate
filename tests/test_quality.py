@@ -1,5 +1,5 @@
 import unittest
-from quality import classify_quality, QualityLevel
+from checkmate.quality import classify_quality, QualityLevel
 
 
 class TestQuality(unittest.TestCase):

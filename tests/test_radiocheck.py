@@ -1,6 +1,6 @@
 import unittest
-from radiocheck import get_response
-from quality import QualityLevel
+from checkmate.radiocheck import get_response
+from checkmate.quality import QualityLevel
 
 
 class TestResponses(unittest.TestCase):

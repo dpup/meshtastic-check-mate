@@ -15,13 +15,16 @@ RUN adduser \
   --uid "${UID}" \
   appuser
 
+# Copy files needed for installation
+COPY setup.py requirements.txt ./
+COPY src ./src/
+
+# Install the package
 RUN --mount=type=cache,target=/root/.cache/pip \
-  --mount=type=bind,source=requirements.txt,target=requirements.txt \
-  python -m pip install -r requirements.txt
+  python -m pip install -e .
 
 USER appuser
-COPY . .
 
-HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 CMD python3 -m check_mate --status
+HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 CMD python3 -m checkmate.main --status
 
-ENTRYPOINT python3 -m check_mate 
+ENTRYPOINT ["python3", "-m", "checkmate.main"]

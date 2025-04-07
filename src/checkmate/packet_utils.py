@@ -7,7 +7,7 @@ Meshtastic packet objects.
 import logging
 from typing import Dict, Any, Optional, Union
 
-from constants import (
+from .constants import (
     KEY_DECODED, KEY_PORTNUM, KEY_USER, KEY_FROM, KEY_ID, 
     KEY_SHORT_NAME, KEY_CHANNEL, KEY_TEXT, KEY_SNR, KEY_RSSI,
     PORT_NODEINFO, PORT_TEXT_MESSAGE, UNKNOWN_NAME

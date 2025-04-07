@@ -8,26 +8,25 @@ import argparse
 import logging
 import os
 import re
-import requests
 import sys
 import time
-from typing import Dict, Optional, Any, Tuple, List
+from typing import Dict, Optional, Any
 
+import requests
 from pubsub import pub
 from pythonjsonlogger import jsonlogger
 
 import meshtastic
 import meshtastic.tcp_interface
-from meshtastic.protobuf import portnums_pb2
 
-from status import StatusManager, Status
-from quality import classify_quality
-from radiocheck import get_response
-from packet_utils import (
+from .status import StatusManager, Status
+from .quality import classify_quality
+from .radiocheck import get_response
+from .packet_utils import (
     is_node_info, is_text_message, get_text, get_channel,
     get_snr, get_rssi, get_name, id_to_hex, extract_user_info
 )
-from constants import (
+from .constants import (
     MAX_HEALTH_CHECK_THROTTLE, UNHEALTHY_TIMEOUT, PROBE_TIMEOUT,
     CONNECTION_RETRY_DELAY, RADIO_CHECK_PATTERN, UNKNOWN_NAME,
     KEY_DECODED, KEY_USER, KEY_PAYLOAD, KEY_FROM, KEY_ID, KEY_SHORT_NAME
@@ -390,9 +389,9 @@ def main() -> int:
 
     # Parse command line arguments
     parser = argparse.ArgumentParser(
-        prog="Meshtastic Check Mate",
+        prog="check-mate",
         description="Monitors private channels and responds to radio checks",
-        epilog="Example: python3 check_mate.py --host meshtastic.local --location 'Base Camp' --healthcheck https://uptime.betterstack.com/api/v1/heartbeat/deadbeef",
+        epilog="Example: check-mate --host meshtastic.local --location 'Base Camp' --healthcheck https://uptime.betterstack.com/api/v1/heartbeat/deadbeef",
     )
     parser.add_argument(
         "--status",
