@@ -7,5 +7,6 @@ the CheckMate application to handle different types of incoming messages.
 
 from .base import MessageResponder
 from .radiocheck import RadioCheckResponder
+from .netstat import NetstatResponder
 
-__all__ = ["MessageResponder", "RadioCheckResponder"]
+__all__ = ["MessageResponder", "RadioCheckResponder", "NetstatResponder"]

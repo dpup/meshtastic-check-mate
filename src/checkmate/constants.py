@@ -7,6 +7,8 @@ MAX_HEALTH_CHECK_THROTTLE = 60  # Max frequency for healthcheck reporting in sec
 UNHEALTHY_TIMEOUT = 5 * 60  # Time since last traffic before considering unhealthy
 PROBE_TIMEOUT = 30  # Time before sending a probe
 CONNECTION_RETRY_DELAY = 5  # Seconds to wait before retrying connection
+MAX_HOPS = 3  # Default max hop count in Meshtastic
+NETSTAT_WINDOW_HOURS = 3  # Time window for netstat reports (in hours)
 
 # Regex patterns
 RADIO_CHECK_PATTERN = r"(mesh|radio)\s*check"
@@ -26,6 +28,8 @@ KEY_TEXT = "text"
 KEY_SNR = "rxSnr"
 KEY_RSSI = "rxRssi"
 KEY_PAYLOAD = "payload"
+KEY_HOP_LIMIT = "hopLimit"
+KEY_HOPS_AWAY = "hopsAway"
 
 # Port numbers as strings
 PORT_NODEINFO = "NODEINFO_APP"

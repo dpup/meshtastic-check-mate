@@ -3,6 +3,7 @@ from unittest.mock import patch, MagicMock
 import requests
 from checkmate.main import CheckMate
 from checkmate.status import StatusManager, Status
+from checkmate.constants import KEY_HOPS_AWAY
 
 
 class TestCheckMate(unittest.TestCase):
@@ -171,6 +172,22 @@ class TestCheckMate(unittest.TestCase):
         # Should not update users dictionary
         self.checkmate.update_user(user_info)
         self.assertEqual(self.checkmate.users, {})
+        
+    def test_dispatch_node_info(self):
+        """Test dispatching node information to responders."""
+        # Create a mock responder that implements NodeInfoReceiver
+        mock_node_info_receiver = MagicMock()
+        # Define the update_node_info method to make it pass runtime type checking
+        mock_node_info_receiver.update_node_info = MagicMock()
+        self.checkmate.responders.append(mock_node_info_receiver)
+        
+        # Call the method
+        node_id = "!abcdef"
+        node_data = {KEY_HOPS_AWAY: 3, "user": {"id": "user123", "shortName": "Test User"}}
+        self.checkmate.dispatch_node_info(node_id, node_data)
+        
+        # Verify that the mock responder received the node info
+        mock_node_info_receiver.update_node_info.assert_called_once_with(node_id, node_data)
         
     @patch('checkmate.main.is_node_info')
     def test_on_receive_responder_handling(self, mock_is_node_info):
