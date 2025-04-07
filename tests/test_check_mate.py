@@ -1,11 +1,8 @@
 import unittest
-from unittest.mock import patch, MagicMock, call
-import json
-import time
+from unittest.mock import patch, MagicMock
 import requests
 from checkmate.main import CheckMate
 from checkmate.status import StatusManager, Status
-from checkmate.constants import KEY_DECODED, KEY_USER
 
 
 class TestCheckMate(unittest.TestCase):

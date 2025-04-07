@@ -6,7 +6,6 @@ retrieve the current operational state of the check-mate process.
 """
 from enum import Enum
 import platform
-import os
 import json
 import logging
 from pathlib import Path

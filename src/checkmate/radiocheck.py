@@ -6,7 +6,7 @@ based on signal quality, sender name, and responder location.
 """
 import random
 import logging
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from .quality import QualityLevel
 

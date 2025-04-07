@@ -5,7 +5,7 @@ This module provides helper functions for extracting and processing data from
 Meshtastic packet objects.
 """
 import logging
-from typing import Dict, Any, Optional, Union
+from typing import Dict, Any, Optional
 
 from .constants import (
     KEY_DECODED, KEY_PORTNUM, KEY_USER, KEY_FROM, KEY_ID, 
@@ -27,8 +27,8 @@ def is_node_info(packet: Dict[str, Any]) -> bool:
         True if the packet is a node info packet, False otherwise
     """
     return (
-        KEY_DECODED in packet and 
-        packet[KEY_DECODED].get(KEY_PORTNUM) == PORT_NODEINFO
+        KEY_DECODED in packet
+        and packet[KEY_DECODED].get(KEY_PORTNUM) == PORT_NODEINFO
     )
 
 
@@ -43,8 +43,8 @@ def is_text_message(packet: Dict[str, Any]) -> bool:
         True if the packet is a text message, False otherwise
     """
     return (
-        KEY_DECODED in packet and 
-        packet[KEY_DECODED].get(KEY_PORTNUM) == PORT_TEXT_MESSAGE
+        KEY_DECODED in packet
+        and packet[KEY_DECODED].get(KEY_PORTNUM) == PORT_TEXT_MESSAGE
     )
 
 

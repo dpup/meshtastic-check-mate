@@ -1,8 +1,6 @@
 """
 Constants for the check-mate application.
 """
-from enum import Enum
-from typing import Dict, List
 
 # Application constants
 MAX_HEALTH_CHECK_THROTTLE = 60  # Max frequency for healthcheck reporting in seconds

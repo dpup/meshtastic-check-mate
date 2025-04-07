@@ -24,12 +24,12 @@ from .quality import classify_quality
 from .radiocheck import get_response
 from .packet_utils import (
     is_node_info, is_text_message, get_text, get_channel,
-    get_snr, get_rssi, get_name, id_to_hex, extract_user_info
+    get_snr, get_rssi, get_name, id_to_hex
 )
 from .constants import (
     MAX_HEALTH_CHECK_THROTTLE, UNHEALTHY_TIMEOUT, PROBE_TIMEOUT,
-    CONNECTION_RETRY_DELAY, RADIO_CHECK_PATTERN, UNKNOWN_NAME,
-    KEY_DECODED, KEY_USER, KEY_PAYLOAD, KEY_FROM, KEY_ID, KEY_SHORT_NAME
+    CONNECTION_RETRY_DELAY, RADIO_CHECK_PATTERN,
+    KEY_DECODED, KEY_USER, KEY_PAYLOAD, KEY_ID, KEY_SHORT_NAME
 )
 
 
@@ -358,8 +358,11 @@ def get_log_format() -> str:
         "levelname",
         "lineno",
     ]
-    log_format = lambda x: ["%({0:s})s".format(i) for i in x]
-    return " ".join(log_format(supported_keys))
+    
+    def format_keys(x):
+        return ["%({0:s})s".format(i) for i in x]
+        
+    return " ".join(format_keys(supported_keys))
 
 
 def main() -> int:
@@ -393,7 +396,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         prog="check-mate",
         description="Monitors private channels and responds to radio checks",
-        epilog="Example: check-mate --host meshtastic.local --location 'Base Camp' --healthcheck https://uptime.betterstack.com/api/v1/heartbeat/deadbeef",
+        epilog="Example: check-mate --host meshtastic.local --location 'Base Camp' "
+               "--healthcheck https://uptime.betterstack.com/api/v1/heartbeat/abcdef",
     )
     parser.add_argument(
         "--status",
