@@ -213,9 +213,9 @@ class TestCheckMate(unittest.TestCase):
     @patch('checkmate.main.get_channel')
     @patch('checkmate.main.get_text')
     @patch('checkmate.main.get_name')
-    def test_on_receive_no_responder(self, mock_get_name, mock_get_text, 
-                                   mock_get_channel, mock_is_text_message, 
-                                   mock_is_node_info):
+    def test_on_receive_no_responder(self, mock_get_name, mock_get_text,
+                                     mock_get_channel, mock_is_text_message,
+                                     mock_is_node_info):
         """Test on_receive behavior when no responder handles the packet."""
         # Setup
         mock_is_node_info.return_value = False

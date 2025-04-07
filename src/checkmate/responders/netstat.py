@@ -12,10 +12,7 @@ from collections import defaultdict
 
 from ..packet_utils import is_text_message, get_text, get_channel, get_name, id_to_hex
 from ..constants import (
-    KEY_FROM,
-    KEY_HOP_LIMIT,
     KEY_HOPS_AWAY,
-    MAX_HOPS,
     NETSTAT_WINDOW_HOURS,
 )
 from .base import NodeInfoReceiver

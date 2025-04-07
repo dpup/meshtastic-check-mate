@@ -1,7 +1,6 @@
 """Tests for the RadioCheckResponder and response generation."""
 
 import unittest
-import re
 from unittest.mock import patch, MagicMock
 
 from checkmate.responders.radiocheck import RadioCheckResponder, get_response
@@ -44,8 +43,8 @@ class TestRadioCheckResponder(unittest.TestCase):
     @patch('checkmate.responders.radiocheck.get_channel')
     @patch('checkmate.responders.radiocheck.get_text')
     @patch('checkmate.responders.radiocheck.re.search')
-    def test_can_handle_not_radio_check(self, mock_search, mock_get_text, 
-                                       mock_get_channel, mock_is_text_message):
+    def test_can_handle_not_radio_check(self, mock_search, mock_get_text,
+                                        mock_get_channel, mock_is_text_message):
         """Test can_handle returns False for non-radio check messages."""
         mock_is_text_message.return_value = True
         mock_get_channel.return_value = 1
@@ -65,8 +64,8 @@ class TestRadioCheckResponder(unittest.TestCase):
     @patch('checkmate.responders.radiocheck.get_channel')
     @patch('checkmate.responders.radiocheck.get_text')
     @patch('checkmate.responders.radiocheck.re.search')
-    def test_can_handle_radio_check(self, mock_search, mock_get_text, 
-                                  mock_get_channel, mock_is_text_message):
+    def test_can_handle_radio_check(
+            self, mock_search, mock_get_text, mock_get_channel, mock_is_text_message):
         """Test can_handle returns True for radio check messages."""
         mock_is_text_message.return_value = True
         mock_get_channel.return_value = 1
@@ -88,8 +87,9 @@ class TestRadioCheckResponder(unittest.TestCase):
     @patch('checkmate.responders.radiocheck.get_name')
     @patch('checkmate.responders.radiocheck.classify_quality')
     @patch('checkmate.responders.radiocheck.get_response')
-    def test_handle(self, mock_get_response, mock_classify_quality, mock_get_name,
-                   mock_get_rssi, mock_get_snr, mock_get_channel):
+    def test_handle(
+            self, mock_get_response, mock_classify_quality, mock_get_name,
+            mock_get_rssi, mock_get_snr, mock_get_channel):
         """Test handle processes radio check and sends response."""
         # Setup mocks
         mock_get_channel.return_value = 1
