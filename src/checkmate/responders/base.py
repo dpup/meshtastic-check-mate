@@ -3,7 +3,7 @@ Base message responder interface.
 
 This module defines the base interfaces that message responders can implement.
 """
-from typing import Dict, Any, Protocol, Optional, runtime_checkable
+from typing import Dict, Any, Protocol, runtime_checkable
 
 
 class MessageResponder(Protocol):

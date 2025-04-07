@@ -41,7 +41,7 @@ from .constants import (
     KEY_FROM,
     KEY_HOPS_AWAY,
 )
-from .responders import MessageResponder, RadioCheckResponder, NetstatResponder
+from .responders import MessageResponder, RadioCheckResponder, NetstatResponder, CheckResponder
 from .responders.base import NodeInfoReceiver
 
 
@@ -474,7 +474,8 @@ def main() -> int:
 
     # Setup default responders in priority order
     responders = [
-        RadioCheckResponder(),  
+        RadioCheckResponder(),
+        CheckResponder(),
         NetstatResponder()       # Also acts as NodeInfoReceiver for hop counts
     ]
 

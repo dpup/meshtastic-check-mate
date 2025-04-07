@@ -29,6 +29,7 @@ KEY_SNR = "rxSnr"
 KEY_RSSI = "rxRssi"
 KEY_PAYLOAD = "payload"
 KEY_HOP_LIMIT = "hopLimit"
+KEY_HOP_START = "hopStart"
 KEY_HOPS_AWAY = "hopsAway"
 
 # Port numbers as strings
