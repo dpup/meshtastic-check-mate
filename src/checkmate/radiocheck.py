@@ -11,40 +11,34 @@ from typing import Dict, List, Optional
 from .quality import QualityLevel
 
 
-# Mapping of quality levels to appropriate response templates
+# Response templates for different signal quality levels
 # Each template can use {name} and {loc} placeholders
+EXCELLENT_RESPONSES = [
+    "{name}, reading you 5 by 5 from {loc}",
+    "Good copy {name}, from {loc}",
+    "Ack {name}, got a strong signal from {loc}",
+]
+
+GOOD_RESPONSES = [
+    "{name}, copy from {loc}",
+    "Ack {name} from {loc}",
+    "{name}, got you here in {loc}",
+]
+
+POOR_RESPONSES = [
+    "Copy {name}, weak signal from {loc}",
+    "{name}, barely got you from {loc}",
+    "Ack {name}, but weak signal from {loc}",
+]
+
+# Mapping of quality levels to appropriate response templates
 RESPONSES: Dict[QualityLevel, List[str]] = {
-    QualityLevel.EXCELLENT: [
-        "{name}, reading you 5 by 5 from {loc}",
-        "Good copy {name}, from {loc}",
-        "Ack {name}, got a strong signal from {loc}",
-    ],
-    QualityLevel.VERY_GOOD: [
-        "{name}, reading you 5 by 5 from {loc}",
-        "Good copy {name}, from {loc}",
-        "Ack {name}, got a strong signal from {loc}",
-    ],
-    QualityLevel.GOOD: [
-        "{name}, copy from {loc}",
-        "Ack {name} from {loc}",
-        "{name}, got you here in {loc}",
-    ],
-    QualityLevel.FAIR: [
-        "{name}, copy from {loc}",
-        "Ack {name} from {loc}",
-        "{name}, got you here in {loc}",
-    ],
-    # POOR and VERY_POOR share the same response templates
-    QualityLevel.POOR: [
-        "Copy {name}, weak signal from {loc}",
-        "{name}, barely got you from {loc}",
-        "Ack {name}, but weak signal from {loc}",
-    ],
-    QualityLevel.VERY_POOR: [
-        "Copy {name}, weak signal from {loc}",
-        "{name}, barely got you from {loc}",
-        "Ack {name}, but weak signal from {loc}",
-    ],
+    QualityLevel.EXCELLENT: EXCELLENT_RESPONSES,
+    QualityLevel.VERY_GOOD: EXCELLENT_RESPONSES,
+    QualityLevel.GOOD: GOOD_RESPONSES,
+    QualityLevel.FAIR: GOOD_RESPONSES,
+    QualityLevel.POOR: POOR_RESPONSES,
+    QualityLevel.VERY_POOR: POOR_RESPONSES,
 }
 
 # Default response when quality level is unknown

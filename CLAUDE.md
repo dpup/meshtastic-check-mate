@@ -24,3 +24,4 @@ Always use the Makefile commands when performing operations to ensure the virtua
 - Error handling: use try/except with specific exceptions
 - JSON logging format for consistency
 - Include detailed docstrings for functions and classes
+- Always use `make test` instead of running python directly
