@@ -22,7 +22,7 @@ The simplest way to set up the project is using the provided Makefile:
 
 ```bash
 # Create virtualenv and install dependencies
-make setup 
+make setup
 
 # Install the package in development mode
 make develop
@@ -77,7 +77,51 @@ python -m checkmate.main --host meshtastic.local --location 'Base Camp'
 check-mate --host meshtastic.local --location 'Base Camp'
 ```
 
-In a private channel on a different node to the one connected to `check-mate`, send a message containing `radio check` or `mesh check` (case insensitive and spaces are ignored).
+## Available Commands
+
+Check-Mate responds to the following commands on private channels:
+
+### `radio check` or `mesh check`
+
+Triggers a signal quality report. The bot will respond with a message indicating how well it's receiving your signal.
+
+Example:
+
+```
+Outrider (a4bc)  : Radio check
+Base camp (ffea) : Copy a4bc, 5.75 SNR from Everest Base Camp
+```
+
+Responses are randomized and vary based on signal quality.
+
+### `?net`
+
+Displays visible nodes in your net, grouped by hop distance. Only shows nodes that have been seen in the last 3 hours.
+
+Example:
+
+```
+Outrider (a4bc)  : ?net
+Base camp (ffea) : Net report! In the last 3hrs:
+                   - 0 hops x 3
+                   - 1 hop x 5
+                   - 2 hops x 2
+```
+
+### `?check`
+
+Returns signal information with hop count, signal strength (RSSI), and signal-to-noise ratio (SNR).
+
+Example:
+
+```
+Outrider (a4bc)  : ?check
+Base camp (ffea) : copy from 2 hops away with -85Db and 58Db SNR
+```
+
+## Command Usage
+
+In a private channel on a different node to the one connected to `check-mate`, send any of the supported commands mentioned above.
 
 ### Arguments
 
@@ -89,15 +133,6 @@ In a private channel on a different node to the one connected to `check-mate`, s
 | --healthcheck | HEALTHCHECKURL | URL to send healthcheck pings to when receiving messages           |
 | --status      | N/A            | Print JSON of latest status                                        |
 | --status-dir  | STATUS_DIR     | Override where the status file is located (see below)              |
-
-### Example radio check
-
-```
-Outrider (a4bc)  : Radio check
-Base camp (ffea) : Copy a4bc, 5.75 SNR from Everest Base Camp
-```
-
-Responses are randomized, to make it a bit more interesting.
 
 ## Docker
 
@@ -133,24 +168,24 @@ healthCheck = {
 check-mate/
 ├── .github/            # GitHub configuration
 │   └── workflows/      # GitHub Actions workflows
-│       ├── ci-cd.yml   # CI/CD pipeline for main branch
-│       ├── pr-validation.yml # PR checks
-│       └── publish-docker-image.yaml # Docker image publishing
 ├── src/                # Source code
 │   └── checkmate/      # Main package
 │       ├── __init__.py
 │       ├── main.py     # Main entry point
 │       ├── status.py   # Status management
 │       ├── quality.py  # Signal quality
-│       ├── radiocheck.py
 │       ├── packet_utils.py
-│       └── constants.py
+│       ├── constants.py
+│       └── responders/  # Message responders
+│           ├── __init__.py
+│           ├── base.py
+│           ├── radiocheck.py
+│           ├── netstat.py
+│           └── ...
 ├── tests/              # Test code
-├── setup.py            # Package setup
-├── requirements.txt    # Dependencies
-├── Makefile            # Build commands
-├── Dockerfile          # Container definition
-└── compose.yaml        # Docker compose config
+├── Makefile            # Build and development commands
+├── Dockerfile          # Standard container definition
+└── ...                 # Other supporting files and configurations
 ```
 
 ## CI/CD Pipeline
@@ -162,6 +197,7 @@ The project uses GitHub Actions for Continuous Integration and Deployment:
 - **Publish Docker Image**: Builds and pushes Docker images tagged as `release` when code is pushed to release branch
 
 Docker images are available at: `ghcr.io/meshtastic/check-mate` with tags:
+
 - `latest` - latest development version (from main branch)
 - `release` - stable release version (from release branch)
 
