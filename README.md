@@ -23,7 +23,7 @@ Install dependencies:
 
 Run check-mate:
 
-    python3 check-mate.py --host meshtastic.local --location 'Base Camp'
+    python3 check_mate.py --host meshtastic.local --location 'Base Camp'
 
 Then in a private channel on a different node to the one connected to `check-mate` send a message containing `radio check` or `mesh check` (case insensitive and spaces are ignored).
 
@@ -51,7 +51,7 @@ ECS does not use Docker healthchecks directly and the healthcheck runs as a diff
 
 ```terraform
 healthCheck = {
-    command     = ["CMD-SHELL", "cd /app && python3 -m check-mate --status --status-dir=/tmp"]
+    command     = ["CMD-SHELL", "cd /app && python3 -m check_mate --status --status-dir=/tmp"]
     interval    = 60
     timeout     = 10
     retries     = 3

@@ -22,6 +22,6 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 USER appuser
 COPY . .
 
-HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 CMD python3 -m check-mate --status
+HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 CMD python3 -m check_mate --status
 
-ENTRYPOINT python3 -m check-mate 
+ENTRYPOINT python3 -m check_mate 
