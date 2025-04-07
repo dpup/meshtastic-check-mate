@@ -131,6 +131,11 @@ healthCheck = {
 
 ```
 check-mate/
+├── .github/            # GitHub configuration
+│   └── workflows/      # GitHub Actions workflows
+│       ├── ci-cd.yml   # CI/CD pipeline for main branch
+│       ├── pr-validation.yml # PR checks
+│       └── publish-docker-image.yaml # Docker image publishing
 ├── src/                # Source code
 │   └── checkmate/      # Main package
 │       ├── __init__.py
@@ -148,7 +153,30 @@ check-mate/
 └── compose.yaml        # Docker compose config
 ```
 
+## CI/CD Pipeline
+
+The project uses GitHub Actions for Continuous Integration and Deployment:
+
+- **PR Validation**: Each pull request runs tests and linting on multiple Python versions
+- **CI/CD Pipeline**: Runs on main branch, performs tests and builds/pushes Docker images tagged as `latest`
+- **Publish Docker Image**: Builds and pushes Docker images tagged as `release` when code is pushed to release branch
+
+Docker images are available at: `ghcr.io/meshtastic/check-mate` with tags:
+- `latest` - latest development version (from main branch)
+- `release` - stable release version (from release branch)
+
+For more details, see [.github/CICD.md](.github/CICD.md)
+
 ## Contributing
 
 Improvements and enhancements welcome. If you find issues or spot possible
 improvements, please submit a pull-request or file an issue.
+
+### Development Workflow
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests and linting locally with `make test` and `make lint`
+5. Submit a pull request
+6. CI will automatically run tests and linting on your PR

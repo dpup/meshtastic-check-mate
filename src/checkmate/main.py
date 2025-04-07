@@ -267,7 +267,9 @@ class CheckMate:
         )
         
         if time_since_last_healthcheck > MAX_HEALTH_CHECK_THROTTLE:
+            # Update timestamp before making the request to prevent rapid retries on failure
             self.last_health_check = current_time
+            
             try:
                 response = requests.head(self.health_check_url, timeout=10)
                 if response.status_code == 200:
@@ -289,7 +291,7 @@ class CheckMate:
                     extra={"error": str(ex)}
                 )
         else:
-            self.logger.info(
+            self.logger.debug(
                 "Health check skipped",
                 extra={"timeSinceLastHealthcheck": time_since_last_healthcheck},
             )
