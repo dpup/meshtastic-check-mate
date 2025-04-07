@@ -3,7 +3,7 @@ Base message responder interface.
 
 This module defines the base interfaces that message responders can implement.
 """
-from typing import Dict, Any, Protocol, runtime_checkable
+from typing import Dict, Any, Protocol, Optional, runtime_checkable
 
 
 class MessageResponder(Protocol):
@@ -53,5 +53,28 @@ class NodeInfoReceiver(Protocol):
             node_id: The ID of the node
             node_data: Dictionary containing node information, including
                       'user' (Dict with user info) and 'hopsAway' (int) if available
+        """
+        ...
+
+
+@runtime_checkable
+class ConfigurableResponder(Protocol):
+    """
+    Protocol for responders that can be configured with updated parameters.
+    Responders can implement this interface to receive configuration updates
+    during runtime, such as when coordinates or API keys become available.
+    """
+    
+    def update_config(self, 
+                      api_key: Optional[str] = None, 
+                      latitude: Optional[float] = None, 
+                      longitude: Optional[float] = None) -> None:
+        """
+        Update configuration parameters for the responder.
+        
+        Args:
+            api_key: Optional API key for external services
+            latitude: Optional latitude for location-based services
+            longitude: Optional longitude for location-based services
         """
         ...

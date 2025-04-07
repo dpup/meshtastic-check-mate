@@ -50,7 +50,8 @@ pip install -e ".[dev]"
 
 ```bash
 # Start the application
-make run HOST=meshtastic.local LOCATION="Base Camp"
+make run HOST=meshtastic.local LOCATION="Base Camp" \
+  LATITUDE=40.7128 LONGITUDE=-74.0060 WEATHER_API_KEY=your_api_key_here
 
 # Check status
 make status
@@ -71,10 +72,12 @@ Once installed, you can run Check-Mate directly:
 
 ```bash
 # As a module
-python -m checkmate.main --host meshtastic.local --location 'Base Camp'
+python -m checkmate.main --host meshtastic.local --location 'Base Camp' \
+  --latitude 40.7128 --longitude -74.0060 --weather-api-key your_api_key_here
 
 # Or using the installed script
-check-mate --host meshtastic.local --location 'Base Camp'
+check-mate --host meshtastic.local --location 'Base Camp' \
+  --latitude 40.7128 --longitude -74.0060 --weather-api-key your_api_key_here
 ```
 
 ## Available Commands
@@ -119,20 +122,34 @@ Outrider (a4bc)  : ?check
 Base camp (ffea) : copy from 2 hops away with -85Db and 58Db SNR
 ```
 
+### `?weather`
+
+Provides current weather information for the node's location. Requires an OpenWeatherMap API key and location coordinates. The location can be obtained either from command-line arguments or automatically from the node's position data.
+
+Example:
+
+```
+Outrider (a4bc)  : ?weather
+Base camp (ffea) : Weather for Tokyo: Scattered clouds, 20.5°C (feels like 19.8°C), humidity 65%, wind 3.5m/s
+```
+
 ## Command Usage
 
 In a private channel on a different node to the one connected to `check-mate`, send any of the supported commands mentioned above.
 
 ### Arguments
 
-| Arg           | Env            | Description                                                        |
-| ------------- | -------------- | ------------------------------------------------------------------ |
-| -h            | N/A            | Show help                                                          |
-| --host        | HOST           | The IP or hostname of the meshtastic node, e.g. `192.168.5.10`     |
-| --location    | LOCATION       | Text description of where your node is, e.g. `SF Mission District` |
-| --healthcheck | HEALTHCHECKURL | URL to send healthcheck pings to when receiving messages           |
-| --status      | N/A            | Print JSON of latest status                                        |
-| --status-dir  | STATUS_DIR     | Override where the status file is located (see below)              |
+| Arg              | Env            | Description                                                        |
+| ---------------- | -------------- | ------------------------------------------------------------------ |
+| -h               | N/A            | Show help                                                          |
+| --host           | HOST           | The IP or hostname of the meshtastic node, e.g. `192.168.5.10`     |
+| --location       | LOCATION       | Text description of where your node is, e.g. `SF Mission District` |
+| --healthcheck    | HEALTHCHECKURL | URL to send healthcheck pings to when receiving messages           |
+| --status         | N/A            | Print JSON of latest status                                        |
+| --status-dir     | STATUS_DIR     | Override where the status file is located (see below)              |
+| --latitude       | LATITUDE       | Latitude for location services (e.g. weather)                      |
+| --longitude      | LONGITUDE      | Longitude for location services (e.g. weather)                     |
+| --weather-api-key| WEATHER_API_KEY| API key for OpenWeatherMap                                         |
 
 ## Docker
 
@@ -140,7 +157,10 @@ Check-Mate can be run using Docker and Docker Compose:
 
 ```bash
 # Build and start with docker-compose
-HOST=meshtastic.local LOCATION="Base Camp" docker-compose up -d
+HOST=meshtastic.local LOCATION="Base Camp" \
+LATITUDE=40.7128 LONGITUDE=-74.0060 \
+WEATHER_API_KEY=your_api_key_here \
+docker-compose up -d
 
 # Check status
 docker-compose exec check-mate python -m checkmate.main --status

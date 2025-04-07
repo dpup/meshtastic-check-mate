@@ -16,6 +16,9 @@ RADIO_CHECK_PATTERN = r"(mesh|radio)\s*check"
 # Response formats
 UNKNOWN_NAME = "???"  # Default name when sender is unknown
 
+# Weather API
+OPENWEATHERMAP_API_URL = "https://api.openweathermap.org/data/3.0/onecall"
+
 # Packet keys
 KEY_DECODED = "decoded"
 KEY_PORTNUM = "portnum"
@@ -31,6 +34,9 @@ KEY_PAYLOAD = "payload"
 KEY_HOP_LIMIT = "hopLimit"
 KEY_HOP_START = "hopStart"
 KEY_HOPS_AWAY = "hopsAway"
+KEY_POSITION = "position"
+KEY_LATITUDE = "latitudeI"
+KEY_LONGITUDE = "longitudeI"
 
 # Port numbers as strings
 PORT_NODEINFO = "NODEINFO_APP"

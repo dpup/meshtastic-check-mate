@@ -19,11 +19,16 @@ $(VENV):
 run:
 	@if [ -z "$(HOST)" ]; then \
 		echo "❌ Error: HOST environment variable is required"; \
-		echo "Usage: make run HOST=<device_ip> [LOCATION=<location>] [HEALTHCHECKURL=<url>]"; \
+		echo "Usage: make run HOST=<device_ip> [LOCATION=<location>] [HEALTHCHECKURL=<url>] [LATITUDE=<lat>] [LONGITUDE=<lon>] [WEATHER_API_KEY=<key>]"; \
 		exit 1; \
 	fi; \
 	echo "🚀 Starting Check-Mate with host $(HOST)..."; \
-	$(PYTHON) -m checkmate.main --host $(HOST) $(if $(LOCATION),--location $(LOCATION),) $(if $(HEALTHCHECKURL),--healthcheck $(HEALTHCHECKURL),)
+	$(PYTHON) -m checkmate.main --host $(HOST) \
+		$(if $(LOCATION),--location $(LOCATION),) \
+		$(if $(HEALTHCHECKURL),--healthcheck $(HEALTHCHECKURL),) \
+		$(if $(LATITUDE),--latitude $(LATITUDE),) \
+		$(if $(LONGITUDE),--longitude $(LONGITUDE),) \
+		$(if $(WEATHER_API_KEY),--weather-api-key $(WEATHER_API_KEY),)
 
 status:
 	@$(PYTHON) -m checkmate.main --status > /tmp/check_mate_status.json; \

@@ -10,6 +10,7 @@ import logging
 import os
 import sys
 import time
+import threading
 from typing import Dict, Optional, Any, List
 
 import requests
@@ -39,10 +40,18 @@ from .constants import (
     KEY_ID,
     KEY_SHORT_NAME,
     KEY_FROM,
-    KEY_HOPS_AWAY,
+    KEY_POSITION,
+    KEY_LATITUDE,
+    KEY_LONGITUDE,
 )
-from .responders import MessageResponder, RadioCheckResponder, NetstatResponder, CheckResponder
-from .responders.base import NodeInfoReceiver
+from .responders import (
+    MessageResponder,
+    RadioCheckResponder,
+    NetstatResponder,
+    CheckResponder,
+    WeatherResponder,
+)
+from .responders.base import NodeInfoReceiver, ConfigurableResponder
 
 
 class CheckMate:
@@ -59,6 +68,9 @@ class CheckMate:
         host: str,
         location: Optional[str] = None,
         health_check_url: Optional[str] = None,
+        latitude: Optional[float] = None,
+        longitude: Optional[float] = None,
+        weather_api_key: Optional[str] = None,
         responders: Optional[List[MessageResponder]] = None,
     ) -> None:
         """
@@ -69,12 +81,18 @@ class CheckMate:
             host: Hostname or IP address of the Meshtastic device
             location: Optional location identifier to include in responses
             health_check_url: Optional URL for external health checks
+            latitude: Optional latitude for location services
+            longitude: Optional longitude for location services
+            weather_api_key: Optional API key for weather services
             responders: Optional list of message responders in priority order
         """
         self.status_manager = status_manager
         self.host = host
         self.location = location or "Unknown Location"
         self.health_check_url = health_check_url
+        self.latitude = latitude
+        self.longitude = longitude
+        self.weather_api_key = weather_api_key
         self.last_health_check: Optional[float] = None
 
         # Initialize default responders if none provided
@@ -186,12 +204,15 @@ class CheckMate:
                 # Update the user info
                 if "user" in node:
                     self.update_user(node["user"])
-                
+
                 # Dispatch node info to interested responders
                 self.dispatch_node_info(node_id, node)
-                
+
         self.logger.info("Connected...")
         self.set_status(Status.CONNECTED, ping=True)
+
+        # Start a thread to get the position from our connected device
+        self._update_position_from_connected_node(interface)
 
     def on_disconnect(self, interface, topic=pub.AUTO_TOPIC) -> None:
         """
@@ -233,17 +254,17 @@ class CheckMate:
                 node_id = None
                 if KEY_FROM in packet:
                     node_id = id_to_hex(packet[KEY_FROM])
-                
+
                 # Update user info if available
                 if KEY_USER in packet[KEY_DECODED]:
                     self.update_user(packet[KEY_DECODED][KEY_USER])
                 else:
                     self.logger.info("Ignoring missing user", extra={"packet": packet})
-                
+
                 # Dispatch node info to interested responders
                 if node_id and KEY_DECODED in packet:
                     self.dispatch_node_info(node_id, packet[KEY_DECODED])
-                
+
                 return
 
             # Try each responder in order until one handles the packet
@@ -331,7 +352,7 @@ class CheckMate:
     def dispatch_node_info(self, node_id: str, node_data: Dict[str, Any]) -> None:
         """
         Dispatch node information updates to responders that implement NodeInfoReceiver.
-        
+
         Args:
             node_id: The ID of the node
             node_data: Dictionary containing node information
@@ -349,7 +370,7 @@ class CheckMate:
                             "error": str(ex),
                         },
                     )
-    
+
     def update_user(self, user: Dict[str, Any]) -> None:
         """
         Update the ID to name mapping for a user.
@@ -363,6 +384,79 @@ class CheckMate:
                 "Updating user identity",
                 extra={"id": user[KEY_ID], "shortName": user[KEY_SHORT_NAME]},
             )
+
+    def _update_position_from_connected_node(self, interface) -> None:
+        """
+        Get position information from the directly connected node.
+
+        This method runs in a separate thread to avoid blocking the main thread
+        while waiting for a GPS position to be available.
+
+        Args:
+            interface: The interface connected to the Meshtastic device
+        """
+
+        def _get_position():
+            if self.latitude is not None and self.longitude is not None:
+                # Skip if we already have coordinates from command line
+                self.logger.info(
+                    "Skipping position update: already set via command line",
+                    extra={"latitude": self.latitude, "longitude": self.longitude},
+                )
+                return
+
+            try:
+                # Try to get the most accurate position from the connected node
+                self.logger.info("Waiting for position from connected node...")
+                interface.waitForPosition()
+
+            except Exception as ex:
+                self.logger.error(
+                    "Error getting position from connected node",
+                    extra={"error": str(ex)},
+                )
+
+            # Try to get our node info even if the above errored.
+            my_node_info = interface.getMyNodeInfo()
+
+            if (
+                my_node_info
+                and KEY_POSITION in my_node_info
+                and KEY_LATITUDE in my_node_info[KEY_POSITION]
+                and KEY_LONGITUDE in my_node_info[KEY_POSITION]
+            ):
+
+                lat_i = my_node_info[KEY_POSITION][KEY_LATITUDE]
+                lon_i = my_node_info[KEY_POSITION][KEY_LONGITUDE]
+
+                if lat_i != 0 and lon_i != 0:  # Check if valid coordinates
+                    # Convert from int to float: multiply by 1e-7
+                    self.latitude = lat_i * 1e-7
+                    self.longitude = lon_i * 1e-7
+                    self.logger.info(
+                        "Updated position from connected node",
+                        extra={
+                            "latitude": self.latitude,
+                            "longitude": self.longitude,
+                        },
+                    )
+
+                    # Update any configurable responders with the new coordinates
+                    for responder in self.responders:
+                        if isinstance(responder, ConfigurableResponder):
+                            responder.update_config(
+                                latitude=self.latitude, longitude=self.longitude
+                            )
+            else:
+                self.logger.warning(
+                    "No position data available from connected node",
+                    extra={"my_node_info": str(my_node_info)},
+                )
+
+        # Start a separate thread to wait for position without blocking
+        position_thread = threading.Thread(target=_get_position)
+        position_thread.daemon = True  # Make thread exit when main thread exits
+        position_thread.start()
 
 
 def get_log_format() -> str:
@@ -457,6 +551,29 @@ def main() -> int:
         help="URL to report healthchecks to (empty HEAD request)",
         default=os.environ.get("HEALTHCHECKURL"),
     )
+    parser.add_argument(
+        "--latitude",
+        dest="latitude",
+        type=float,
+        required=False,
+        help="Latitude for location services (e.g. weather)",
+        default=os.environ.get("LATITUDE"),
+    )
+    parser.add_argument(
+        "--longitude",
+        dest="longitude",
+        type=float,
+        required=False,
+        help="Longitude for location services (e.g. weather)",
+        default=os.environ.get("LONGITUDE"),
+    )
+    parser.add_argument(
+        "--weather-api-key",
+        dest="weather_api_key",
+        required=False,
+        help="API key for OpenWeatherMap",
+        default=os.environ.get("WEATHER_API_KEY"),
+    )
     args = parser.parse_args()
 
     # Initialize the status manager
@@ -473,10 +590,14 @@ def main() -> int:
         )
 
     # Setup default responders in priority order
+    weather_responder = WeatherResponder(
+        args.weather_api_key, args.latitude, args.longitude
+    )
     responders = [
         RadioCheckResponder(),
         CheckResponder(),
-        NetstatResponder()       # Also acts as NodeInfoReceiver for hop counts
+        weather_responder,
+        NetstatResponder(),  # Also acts as NodeInfoReceiver for hop counts
     ]
 
     # Start the application
@@ -485,6 +606,9 @@ def main() -> int:
         args.host,
         args.location,
         args.health_check_url,
+        args.latitude,
+        args.longitude,
+        args.weather_api_key,
         responders=responders,
     )
     return checkmate.start()
