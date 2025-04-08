@@ -181,9 +181,6 @@ class WeatherResponder(ConfigurableResponder):
             current = weather_data.get("current", {})
             weather = current.get("weather", [{}])[0] if current else {}
 
-            # Use weather data's lat/lon to create a location name
-            location_name = f"Lat {weather_data.get('lat', 0):.2f}, Lon {weather_data.get('lon', 0):.2f}"
-
             # Current weather conditions
             temp_kelvin = current.get("temp", 273.15)  # Default to 0°C if missing
             temp_celsius = (
@@ -203,19 +200,35 @@ class WeatherResponder(ConfigurableResponder):
 
             # Check for weather alerts
             alerts = weather_data.get("alerts", [])
-            alert_msg = ""
+            event = ""
             if alerts:
                 alert = alerts[0]  # Just mention the first alert
-                event = alert.get("event", "weather alert")
-                alert_msg = f"\n ⚠️ {event}"
+                event = alert.get("event", "")
 
-            # Format the response
+            # Format coordinates if using lat/lon
+            lat = weather_data.get("lat", 0)
+            lon = weather_data.get("lon", 0)
+            lat_deg = int(abs(lat))
+            lat_min = (abs(lat) - lat_deg) * 60
+            lat_dir = "N" if lat >= 0 else "S"
+
+            lon_deg = int(abs(lon))
+            lon_min = (abs(lon) - lon_deg) * 60
+            lon_dir = "E" if lon >= 0 else "W"
+
+            location_display = f"{lat_deg}° {lat_min:.2f}′ {lat_dir}, {lon_deg}° {lon_min:.2f}′ {lon_dir}"
+
+            # Format alert message
+            formatted_alert = ""
+            if alerts:
+                event_text = event.strip()
+                formatted_alert = f"\n\n⚠️ {event_text}"
+
             return (
-                f"Weather for {location_name}: {description.capitalize()}\n"
-                f"{temp_celsius:.1f}°C (feels like {feels_like_celsius:.1f}°C)\n"
-                f"humidity {humidity}%\n"
-                f"wind {wind_speed:.1f}m"
-                f"{alert_msg}"
+                f"Weather @ {location_display}:\n"
+                f"{description.capitalize()}, {temp_celsius:.1f}°C (feels like {feels_like_celsius:.1f}°C)\n"
+                f"Humidity {humidity}%, Wind {wind_speed:.1f}m/s"
+                f"{formatted_alert}"
             )
         except Exception as ex:
             self.logger.error("Error formatting weather data", extra={"error": str(ex)})

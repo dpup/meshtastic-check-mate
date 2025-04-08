@@ -1,6 +1,7 @@
 """
 Unit tests for the weather responder.
 """
+
 import unittest
 from unittest.mock import MagicMock, patch
 
@@ -12,7 +13,9 @@ class TestWeatherResponder(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        self.responder = WeatherResponder(api_key="test_key", latitude=35.6895, longitude=139.6917)
+        self.responder = WeatherResponder(
+            api_key="test_key", latitude=35.6895, longitude=139.6917
+        )
         self.interface_mock = MagicMock()
         self.users = {"!abc123": "TestUser"}
 
@@ -20,23 +23,17 @@ class TestWeatherResponder(unittest.TestCase):
         """Test can_handle returns True for valid weather requests."""
         # Create a packet that should be handled
         packet = {
-            "decoded": {
-                "portnum": "TEXT_MESSAGE_APP",
-                "text": "?weather"
-            },
-            "channel": 1
+            "decoded": {"portnum": "TEXT_MESSAGE_APP", "text": "?weather"},
+            "channel": 1,
         }
 
         result = self.responder.can_handle(packet)
         self.assertTrue(result)
-        
+
         # Test with whitespace and mixed case
         packet = {
-            "decoded": {
-                "portnum": "TEXT_MESSAGE_APP",
-                "text": "  ?WeAtHeR  "
-            },
-            "channel": 1
+            "decoded": {"portnum": "TEXT_MESSAGE_APP", "text": "  ?WeAtHeR  "},
+            "channel": 1,
         }
 
         result = self.responder.can_handle(packet)
@@ -45,21 +42,13 @@ class TestWeatherResponder(unittest.TestCase):
     def test_can_handle_invalid_weather(self):
         """Test can_handle returns False for invalid requests."""
         # Test non-text message
-        packet1 = {
-            "decoded": {
-                "portnum": "NODEINFO_APP"
-            },
-            "channel": 1
-        }
+        packet1 = {"decoded": {"portnum": "NODEINFO_APP"}, "channel": 1}
         self.assertFalse(self.responder.can_handle(packet1))
 
         # Test default channel
         packet2 = {
-            "decoded": {
-                "portnum": "TEXT_MESSAGE_APP",
-                "text": "?weather"
-            },
-            "channel": 0
+            "decoded": {"portnum": "TEXT_MESSAGE_APP", "text": "?weather"},
+            "channel": 0,
         }
         self.assertFalse(self.responder.can_handle(packet2))
 
@@ -67,19 +56,16 @@ class TestWeatherResponder(unittest.TestCase):
         packet3 = {
             "decoded": {
                 "portnum": "TEXT_MESSAGE_APP",
-                "text": "just a regular message"
+                "text": "just a regular message",
             },
-            "channel": 1
+            "channel": 1,
         }
         self.assertFalse(self.responder.can_handle(packet3))
-        
+
         # Test partial match
         packet4 = {
-            "decoded": {
-                "portnum": "TEXT_MESSAGE_APP",
-                "text": "?weather today"
-            },
-            "channel": 1
+            "decoded": {"portnum": "TEXT_MESSAGE_APP", "text": "?weather today"},
+            "channel": 1,
         }
         self.assertFalse(self.responder.can_handle(packet4))
 
@@ -87,22 +73,21 @@ class TestWeatherResponder(unittest.TestCase):
         """Test handling when API key is missing."""
         self.responder.api_key = None
         packet = {
-            "decoded": {
-                "portnum": "TEXT_MESSAGE_APP",
-                "text": "?weather"
-            },
+            "decoded": {"portnum": "TEXT_MESSAGE_APP", "text": "?weather"},
             "from": 0x123456,
-            "channel": 2
+            "channel": 2,
         }
 
-        with patch('checkmate.responders.weather.get_name') as mock_get_name:
+        with patch("checkmate.responders.weather.get_name") as mock_get_name:
             mock_get_name.return_value = "TestUser"
-            
-            result = self.responder.handle(packet, self.interface_mock, self.users, "Base")
-            
+
+            result = self.responder.handle(
+                packet, self.interface_mock, self.users, "Base"
+            )
+
             # Verify result is False (failed)
             self.assertFalse(result)
-            
+
             # Verify message sent contains error about missing API key
             self.interface_mock.sendText.assert_called_once()
             sent_text = self.interface_mock.sendText.call_args[0][0]
@@ -112,28 +97,27 @@ class TestWeatherResponder(unittest.TestCase):
         """Test handling when location is missing."""
         self.responder.latitude = None
         packet = {
-            "decoded": {
-                "portnum": "TEXT_MESSAGE_APP",
-                "text": "?weather"
-            },
+            "decoded": {"portnum": "TEXT_MESSAGE_APP", "text": "?weather"},
             "from": 0x123456,
-            "channel": 2
+            "channel": 2,
         }
 
-        with patch('checkmate.responders.weather.get_name') as mock_get_name:
+        with patch("checkmate.responders.weather.get_name") as mock_get_name:
             mock_get_name.return_value = "TestUser"
-            
-            result = self.responder.handle(packet, self.interface_mock, self.users, "Base")
-            
+
+            result = self.responder.handle(
+                packet, self.interface_mock, self.users, "Base"
+            )
+
             # Verify result is False (failed)
             self.assertFalse(result)
-            
+
             # Verify message sent contains error about missing location
             self.interface_mock.sendText.assert_called_once()
             sent_text = self.interface_mock.sendText.call_args[0][0]
             self.assertIn("missing location", sent_text)
 
-    @patch('requests.get')
+    @patch("requests.get")
     def test_successful_weather_fetch(self, mock_get):
         """Test successful weather data fetching and response."""
         # Mock response data
@@ -157,48 +141,53 @@ class TestWeatherResponder(unittest.TestCase):
                         "id": 803,
                         "main": "Clouds",
                         "description": "scattered clouds",
-                        "icon": "04d"
+                        "icon": "04d",
                     }
-                ]
-            }
+                ],
+            },
         }
         mock_get.return_value = mock_response
-        
+
         packet = {
-            "decoded": {
-                "portnum": "TEXT_MESSAGE_APP",
-                "text": "?weather"
-            },
+            "decoded": {"portnum": "TEXT_MESSAGE_APP", "text": "?weather"},
             "from": 0x123456,
-            "channel": 2
+            "channel": 2,
         }
 
-        with patch('checkmate.responders.weather.get_name') as mock_get_name:
+        with patch("checkmate.responders.weather.get_name") as mock_get_name:
             mock_get_name.return_value = "TestUser"
-            
-            result = self.responder.handle(packet, self.interface_mock, self.users, "Base")
-            
+
+            result = self.responder.handle(
+                packet, self.interface_mock, self.users, "Base"
+            )
+
             # Verify result is True (success)
             self.assertTrue(result)
-            
+
             # Verify API was called with correct parameters
             mock_get.assert_called_once()
             args, kwargs = mock_get.call_args
-            self.assertEqual(kwargs['params']['lat'], 35.6895)
-            self.assertEqual(kwargs['params']['lon'], 139.6917)
-            self.assertEqual(kwargs['params']['appid'], "test_key")
-            self.assertEqual(kwargs['params']['exclude'], "minutely,hourly")
-            
+            self.assertEqual(kwargs["params"]["lat"], 35.6895)
+            self.assertEqual(kwargs["params"]["lon"], 139.6917)
+            self.assertEqual(kwargs["params"]["appid"], "test_key")
+            self.assertEqual(kwargs["params"]["exclude"], "minutely,hourly")
+
             # Verify message sent contains weather information
             self.interface_mock.sendText.assert_called_once()
             sent_text = self.interface_mock.sendText.call_args[0][0]
-            self.assertIn("Weather for Tokyo", sent_text)
-            self.assertIn("Scattered clouds", sent_text)  # First letter is capitalized
-            self.assertIn("20.5°C", sent_text)
-            self.assertIn("humidity 65%", sent_text)
-            self.assertIn("wind 3.5m/s", sent_text)
 
-    @patch('requests.get')
+            # Based on the coordinates in the mock response: 35.6895, 139.6917
+            expected_coords = "35° 41.37′ N, 139° 41.50′ E"
+            self.assertIn(f"Weather @ {expected_coords}", sent_text)
+            self.assertIn(":", sent_text)  # Check for colon after location
+            self.assertIn(
+                "Scattered clouds, 20.5°C", sent_text
+            )  # First letter is capitalized
+            self.assertIn("feels like 19.8°C", sent_text)
+            self.assertIn("Humidity 65%", sent_text)  # Note capitalization
+            self.assertIn("Wind 3.5m/s", sent_text)  # Note capitalization
+
+    @patch("requests.get")
     def test_failed_weather_fetch(self, mock_get):
         """Test failed weather data fetching."""
         # Mock failed response
@@ -206,24 +195,23 @@ class TestWeatherResponder(unittest.TestCase):
         mock_response.status_code = 401
         mock_response.text = "Unauthorized"
         mock_get.return_value = mock_response
-        
+
         packet = {
-            "decoded": {
-                "portnum": "TEXT_MESSAGE_APP",
-                "text": "?weather"
-            },
+            "decoded": {"portnum": "TEXT_MESSAGE_APP", "text": "?weather"},
             "from": 0x123456,
-            "channel": 2
+            "channel": 2,
         }
 
-        with patch('checkmate.responders.weather.get_name') as mock_get_name:
+        with patch("checkmate.responders.weather.get_name") as mock_get_name:
             mock_get_name.return_value = "TestUser"
-            
-            result = self.responder.handle(packet, self.interface_mock, self.users, "Base")
-            
+
+            result = self.responder.handle(
+                packet, self.interface_mock, self.users, "Base"
+            )
+
             # Verify result is False (failed)
             self.assertFalse(result)
-            
+
             # Verify message sent contains error about unable to fetch
             self.interface_mock.sendText.assert_called_once()
             sent_text = self.interface_mock.sendText.call_args[0][0]
