@@ -1,6 +1,17 @@
 # Meshtastic Check Mate
 
-_TCP based bot that monitors **private** channels and responds to radio checks._
+_TCP based bot that monitors Meshtastic channels and responds to various commands._
+
+## Overview
+
+Check-Mate provides a variety of useful services to your Meshtastic mesh network:
+
+- **Radio Checks**: Verify signal quality with other nodes
+- **Network Status**: Get visibility into your mesh network topology
+- **Weather Information**: Access current weather conditions and alerts
+- **Signal Reports**: Detailed signal metrics including RSSI and SNR
+
+The bot connects to a Meshtastic node on your network and responds to commands sent on any channel.
 
 ## Requirements
 
@@ -82,7 +93,7 @@ check-mate --host meshtastic.local --location 'Base Camp' \
 
 ## Available Commands
 
-Check-Mate responds to the following commands on private channels:
+Check-Mate responds to the following commands on any channel except the default channel (channel 0):
 
 ### `radio check` or `mesh check`
 
@@ -139,7 +150,7 @@ Base camp (ffea) : Weather for (37° 46.49′ N, 122° 25.17′ W):
 
 ### `?alerts`
 
-Provides detailed information about active weather alerts for the node's location. Requires an OpenWeatherMap API key and location coordinates. Sends multiple messages to avoid exceeding the maximum message size, with each alert broken down into manageable chunks.
+Provides detailed information about active weather alerts for the node's location. Requires an OpenWeatherMap API key and location coordinates. Sends multiple messages to avoid exceeding the maximum message size, with each alert broken down into manageable chunks with continuity indicators (n/m).
 
 Example:
 
@@ -147,31 +158,32 @@ Example:
 Outrider (a4bc)  : ?alerts
 Base camp (ffea) : Weather Alerts for (37° 46.49′ N, 122° 25.17′ W): 1 active alert
 Base camp (ffea) : ALERT 1/1: Small Craft Advisory
-Base camp (ffea) : From: NWS San Francisco Bay Area
-Base camp (ffea) : ...SMALL CRAFT ADVISORY REMAINS IN EFFECT FROM 3 PM THIS AFTERNOON TO 9 PM PDT FRIDAY...
-Base camp (ffea) : * WHAT...Northwest winds 15 to 25 kt with gusts up to 30 kt expected.
-Base camp (ffea) : * WHERE...Coastal waters from Point Pinos to Point Piedras Blancas.
-Base camp (ffea) : * WHEN...From 3 PM this afternoon to 9 PM PDT Friday.
-Base camp (ffea) : * IMPACTS...Conditions will be hazardous to small craft.
+From: NWS San Francisco Bay Area (1/5)
+Base camp (ffea) : ...SMALL CRAFT ADVISORY REMAINS IN EFFECT FROM 3 PM THIS AFTERNOON TO 9 PM PDT FRIDAY... (2/5)
+Base camp (ffea) : * WHAT...Northwest winds 15 to 25 kt with gusts up to 30 kt expected. (3/5)
+Base camp (ffea) : * WHERE...Coastal waters from Point Pinos to Point Piedras Blancas. (4/5)
+Base camp (ffea) : * WHEN...From 3 PM this afternoon to 9 PM PDT Friday. * IMPACTS...Conditions will be hazardous to small craft. (5/5)
 ```
+
+Messages are sent with a 2-second delay between them to avoid network saturation.
 
 ## Command Usage
 
-In a private channel on a different node to the one connected to `check-mate`, send any of the supported commands mentioned above.
+On any Meshtastic node in your mesh network, send any of the supported commands on a non-default channel (any channel except channel 0).
 
 ### Arguments
 
-| Arg              | Env            | Description                                                        |
-| ---------------- | -------------- | ------------------------------------------------------------------ |
-| -h               | N/A            | Show help                                                          |
-| --host           | HOST           | The IP or hostname of the meshtastic node, e.g. `192.168.5.10`     |
-| --location       | LOCATION       | Text description of where your node is, e.g. `SF Mission District` |
-| --healthcheck    | HEALTHCHECKURL | URL to send healthcheck pings to when receiving messages           |
-| --status         | N/A            | Print JSON of latest status                                        |
-| --status-dir     | STATUS_DIR     | Override where the status file is located (see below)              |
-| --latitude       | LATITUDE       | Latitude for location services (e.g. weather)                      |
-| --longitude      | LONGITUDE      | Longitude for location services (e.g. weather)                     |
-| --weather-api-key| WEATHER_API_KEY| API key for OpenWeatherMap                                         |
+| Arg               | Env             | Description                                                        |
+| ----------------- | --------------- | ------------------------------------------------------------------ |
+| -h                | N/A             | Show help                                                          |
+| --host            | HOST            | The IP or hostname of the meshtastic node, e.g. `192.168.5.10`     |
+| --location        | LOCATION        | Text description of where your node is, e.g. `SF Mission District` |
+| --healthcheck     | HEALTHCHECKURL  | URL to send healthcheck pings to when receiving messages           |
+| --status          | N/A             | Print JSON of latest status                                        |
+| --status-dir      | STATUS_DIR      | Override where the status file is located (see below)              |
+| --latitude        | LATITUDE        | Latitude for location services (e.g. weather)                      |
+| --longitude       | LONGITUDE       | Longitude for location services (e.g. weather)                     |
+| --weather-api-key | WEATHER_API_KEY | API key for OpenWeatherMap                                         |
 
 ## Docker
 
@@ -258,3 +270,28 @@ improvements, please submit a pull-request or file an issue.
 4. Run tests and linting locally with `make test` and `make lint`
 5. Submit a pull request
 6. CI will automatically run tests and linting on your PR
+
+## How I Use Check-Mate
+
+I’ve set up a geographically distributed mesh. Each location has a Meshtastic node connected to the Internet via WiFi and MQTT. Check-Mate instances monitor each node through AWS ECS and Tailscale.
+
+### 1. Network Architecture:
+
+- Tailscale bridges AWS and physical locations.
+- Each location has its own local Meshtastic mesh with multiple nodes.
+- A gateway node at each location connects to the internet with a fixed IP and MQTT configuration.
+- Tailscale allows ECS to access the gateway node.
+
+### 2. Check-Mate Deployment:
+
+- Two Check-Mate instances run in AWS ECS (Elastic Container Service), each monitoring a different Meshtastic node.
+- ECS ensures automatic restarts if an instance becomes unresponsive.
+- Container logs are sent to CloudWatch for monitoring and troubleshooting.
+
+### 3. Channel Configuration:
+
+- Several non-default channels are set up for different purposes.
+- Both Check-Mate instances monitor these channels.
+- MQTT bridges the physical meshes, creating shared private channels (as long as the internet is up).
+
+The ECS deployment ensures Check-Mate instances run continuously with minimal maintenance. Health checks automatically restart containers if they become unresponsive, which can happen with long-running Python MQTT clients.
