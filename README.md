@@ -130,7 +130,29 @@ Example:
 
 ```
 Outrider (a4bc)  : ?weather
-Base camp (ffea) : Weather for Tokyo: Scattered clouds, 20.5°C (feels like 19.8°C), humidity 65%, wind 3.5m/s
+Base camp (ffea) : Weather for (37° 46.49′ N, 122° 25.17′ W):
+                   Broken clouds, 14.7°C (feels like 14.3°C)
+                   Humidity 80%, Wind 8.2m
+
+                   ⚠️ Beach Hazards
+```
+
+### `?alerts`
+
+Provides detailed information about active weather alerts for the node's location. Requires an OpenWeatherMap API key and location coordinates. Sends multiple messages to avoid exceeding the maximum message size, with each alert broken down into manageable chunks.
+
+Example:
+
+```
+Outrider (a4bc)  : ?alerts
+Base camp (ffea) : Weather Alerts for (37° 46.49′ N, 122° 25.17′ W): 1 active alert
+Base camp (ffea) : ALERT 1/1: Small Craft Advisory
+Base camp (ffea) : From: NWS San Francisco Bay Area
+Base camp (ffea) : ...SMALL CRAFT ADVISORY REMAINS IN EFFECT FROM 3 PM THIS AFTERNOON TO 9 PM PDT FRIDAY...
+Base camp (ffea) : * WHAT...Northwest winds 15 to 25 kt with gusts up to 30 kt expected.
+Base camp (ffea) : * WHERE...Coastal waters from Point Pinos to Point Piedras Blancas.
+Base camp (ffea) : * WHEN...From 3 PM this afternoon to 9 PM PDT Friday.
+Base camp (ffea) : * IMPACTS...Conditions will be hazardous to small craft.
 ```
 
 ## Command Usage

@@ -10,5 +10,13 @@ from .radiocheck import RadioCheckResponder
 from .netstat import NetstatResponder
 from .check import CheckResponder
 from .weather import WeatherResponder
+from .alerts import AlertsResponder
 
-__all__ = ["MessageResponder", "RadioCheckResponder", "NetstatResponder", "CheckResponder", "WeatherResponder"]
+__all__ = [
+    "MessageResponder",
+    "RadioCheckResponder", 
+    "NetstatResponder", 
+    "CheckResponder", 
+    "WeatherResponder", 
+    "AlertsResponder"
+]

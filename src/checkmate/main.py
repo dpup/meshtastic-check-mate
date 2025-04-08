@@ -50,6 +50,7 @@ from .responders import (
     NetstatResponder,
     CheckResponder,
     WeatherResponder,
+    AlertsResponder,
 )
 from .responders.base import NodeInfoReceiver, ConfigurableResponder
 
@@ -593,10 +594,14 @@ def main() -> int:
     weather_responder = WeatherResponder(
         args.weather_api_key, args.latitude, args.longitude
     )
+    alerts_responder = AlertsResponder(
+        args.weather_api_key, args.latitude, args.longitude
+    )
     responders = [
         RadioCheckResponder(),
         CheckResponder(),
         weather_responder,
+        alerts_responder,
         NetstatResponder(),  # Also acts as NodeInfoReceiver for hop counts
     ]
 
