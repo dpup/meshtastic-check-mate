@@ -135,4 +135,4 @@ class StatusManager:
         """
         status = self.read_status()
         print(json.dumps(status))
-        return 0 if status.get("status") == Status.ACTIVE else 1
+        return 0 if status.get("status") in {Status.ACTIVE, Status.PROBING} else 1
