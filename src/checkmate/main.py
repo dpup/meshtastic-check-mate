@@ -129,6 +129,7 @@ class CheckMate:
             while True:
                 try:
                     self.logger.info("Connecting...", extra={"host": self.host})
+                    self.set_status(Status.CONNECTING)
                     self.connected = True
                     self.iface = meshtastic.tcp_interface.TCPInterface(
                         hostname=self.host,
