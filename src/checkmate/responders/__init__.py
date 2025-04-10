@@ -11,6 +11,7 @@ from .netstat import NetstatResponder
 from .check import CheckResponder
 from .weather import WeatherResponder
 from .alerts import AlertsResponder
+from .status import StatusResponder
 
 __all__ = [
     "MessageResponder",
@@ -18,5 +19,6 @@ __all__ = [
     "NetstatResponder", 
     "CheckResponder", 
     "WeatherResponder", 
-    "AlertsResponder"
+    "AlertsResponder",
+    "StatusResponder"
 ]

@@ -51,6 +51,7 @@ from .responders import (
     CheckResponder,
     WeatherResponder,
     AlertsResponder,
+    StatusResponder,
 )
 from .responders.base import NodeInfoReceiver, ConfigurableResponder
 
@@ -242,6 +243,10 @@ class CheckMate:
         self.report_health()
         self.set_status(Status.ACTIVE, ping=True)
 
+        # Update packet counters for StatusResponder
+        self.status["packet_count"] = self.status.get("packet_count", 0) + 1
+        # We'll check for text messages during handling instead of here to avoid double-calling is_text_message
+
         # Log packet information (with potentially sensitive data removed)
         extra = packet.copy()
         if KEY_DECODED in packet:
@@ -269,6 +274,11 @@ class CheckMate:
 
                 return
 
+            # Check if this is a text message and update counter if so
+            is_text = is_text_message(packet)
+            if is_text:
+                self.status["message_count"] = self.status.get("message_count", 0) + 1
+            
             # Try each responder in order until one handles the packet
             for responder in self.responders:
                 if responder.can_handle(packet):
@@ -280,7 +290,7 @@ class CheckMate:
                     return
 
             # Log if no responder handled the packet
-            if is_text_message(packet):
+            if is_text:
                 channel = get_channel(packet)
                 text = get_text(packet)
                 name = get_name(packet, self.users, id_to_hex)
@@ -601,6 +611,7 @@ def main() -> int:
     responders = [
         RadioCheckResponder(),
         CheckResponder(),
+        StatusResponder(status_manager),
         weather_responder,
         alerts_responder,
         NetstatResponder(),  # Also acts as NodeInfoReceiver for hop counts
