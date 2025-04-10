@@ -12,6 +12,7 @@ from .check import CheckResponder
 from .weather import WeatherResponder
 from .alerts import AlertsResponder
 from .status import StatusResponder
+from .help import HelpResponder
 
 __all__ = [
     "MessageResponder",
@@ -20,5 +21,6 @@ __all__ = [
     "CheckResponder", 
     "WeatherResponder", 
     "AlertsResponder",
-    "StatusResponder"
+    "StatusResponder",
+    "HelpResponder"
 ]

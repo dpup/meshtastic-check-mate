@@ -52,6 +52,7 @@ from .responders import (
     WeatherResponder,
     AlertsResponder,
     StatusResponder,
+    HelpResponder,
 )
 from .responders.base import NodeInfoReceiver, ConfigurableResponder
 
@@ -104,6 +105,11 @@ class CheckMate:
         self.iface = None
         self.connected = False
         self.logger = logging.getLogger(__name__)
+        
+        # Track packet and message counts
+        self.packet_count = 0
+        self.message_count = 0
+        
         self.status: Dict[str, Any] = {
             "status": "starting",
             "start_time": time.time(),
@@ -189,6 +195,11 @@ class CheckMate:
         self.status["status"] = status
         self.status["update_time"] = time.time()
         self.status["user_count"] = len(self.users)
+        
+        # Copy packet and message counts to status
+        self.status["packet_count"] = self.packet_count
+        self.status["message_count"] = self.message_count
+        
         if ping:
             self.status["last_device_ping"] = time.time()
         self.logger.info("Status updated", extra=self.status)
@@ -243,9 +254,8 @@ class CheckMate:
         self.report_health()
         self.set_status(Status.ACTIVE, ping=True)
 
-        # Update packet counters for StatusResponder
-        self.status["packet_count"] = self.status.get("packet_count", 0) + 1
-        # We'll check for text messages during handling instead of here to avoid double-calling is_text_message
+        # Update packet counter
+        self.packet_count += 1
 
         # Log packet information (with potentially sensitive data removed)
         extra = packet.copy()
@@ -277,7 +287,7 @@ class CheckMate:
             # Check if this is a text message and update counter if so
             is_text = is_text_message(packet)
             if is_text:
-                self.status["message_count"] = self.status.get("message_count", 0) + 1
+                self.message_count += 1
             
             # Try each responder in order until one handles the packet
             for responder in self.responders:
@@ -609,6 +619,7 @@ def main() -> int:
         args.weather_api_key, args.latitude, args.longitude
     )
     responders = [
+        HelpResponder(),     # Help should have highest priority
         RadioCheckResponder(),
         CheckResponder(),
         StatusResponder(status_manager),
