@@ -54,6 +54,7 @@ from .responders import (
     StatusResponder,
     HelpResponder,
 )
+from .responders.scheduled import ScheduledMessageResponder, parse_scheduled_messages
 from .responders.base import NodeInfoReceiver, ConfigurableResponder
 
 
@@ -75,6 +76,7 @@ class CheckMate:
         longitude: Optional[float] = None,
         weather_api_key: Optional[str] = None,
         responders: Optional[List[MessageResponder]] = None,
+        scheduled_message_responder: Optional[ScheduledMessageResponder] = None,
     ) -> None:
         """
         Initialize a new CheckMate instance.
@@ -88,6 +90,7 @@ class CheckMate:
             longitude: Optional longitude for location services
             weather_api_key: Optional API key for weather services
             responders: Optional list of message responders in priority order
+            scheduled_message_responder: Optional responder for scheduled messages
         """
         self.status_manager = status_manager
         self.host = host
@@ -100,6 +103,7 @@ class CheckMate:
 
         # Initialize default responders if none provided
         self.responders = responders or [RadioCheckResponder()]
+        self.scheduled_message_responder = scheduled_message_responder
 
         self.users: Dict[str, str] = {}
         self.iface = None
@@ -225,6 +229,10 @@ class CheckMate:
         self.logger.info("Connected...")
         self.set_status(Status.CONNECTED, ping=True)
 
+        # Start scheduled message responder if configured
+        if self.scheduled_message_responder:
+            self.scheduled_message_responder.start_scheduler(interface)
+
         # Start a thread to get the position from our connected device
         self._update_position_from_connected_node(interface)
 
@@ -239,6 +247,10 @@ class CheckMate:
         self.logger.info("Disconnected... waiting for reconnect...")
         self.connected = False
         self.set_status(Status.DISCONNECTED)
+        
+        # Stop scheduled message responder if running
+        if self.scheduled_message_responder:
+            self.scheduled_message_responder.stop_scheduler()
 
     def on_receive(self, packet: Dict[str, Any], interface) -> None:
         """
@@ -596,6 +608,14 @@ def main() -> int:
         help="API key for OpenWeatherMap",
         default=os.environ.get("WEATHER_API_KEY"),
     )
+    parser.add_argument(
+        "--messages",
+        dest="scheduled_messages",
+        required=False,
+        help="Scheduled messages in format: 'Day(s);Time;Timezone;ChannelIndex;Message' "
+             "(e.g., 'Monday;18:45;UTC;1;Reminder message')",
+        default=os.environ.get("SCHEDULED_MESSAGES"),
+    )
     args = parser.parse_args()
 
     # Initialize the status manager
@@ -610,6 +630,20 @@ def main() -> int:
         parser.error(
             "Please provide a host via --host or the $HOST environment variable"
         )
+
+    # Parse scheduled messages if provided
+    scheduled_message_responder = None
+    if args.scheduled_messages:
+        try:
+            scheduled_messages = parse_scheduled_messages(args.scheduled_messages)
+            if scheduled_messages:
+                scheduled_message_responder = ScheduledMessageResponder(scheduled_messages)
+                logging.getLogger(__name__).info(
+                    "Configured scheduled messages",
+                    extra={"messages": scheduled_messages}
+                )
+        except ValueError as e:
+            parser.error(f"Invalid scheduled messages format: {e}")
 
     # Setup default responders in priority order
     weather_responder = WeatherResponder(
@@ -627,6 +661,10 @@ def main() -> int:
         alerts_responder,
         NetstatResponder(),  # Also acts as NodeInfoReceiver for hop counts
     ]
+    
+    # Add scheduled message responder to handle ?reminders command if configured
+    if scheduled_message_responder:
+        responders.append(scheduled_message_responder)
 
     # Start the application
     checkmate = CheckMate(
@@ -638,6 +676,7 @@ def main() -> int:
         args.longitude,
         args.weather_api_key,
         responders=responders,
+        scheduled_message_responder=scheduled_message_responder,
     )
     return checkmate.start()
 

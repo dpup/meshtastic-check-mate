@@ -167,23 +167,115 @@ Base camp (ffea) : * WHEN...From 3 PM this afternoon to 9 PM PDT Friday. * IMPAC
 
 Messages are sent with a 2-second delay between them to avoid network saturation.
 
+### `?help`
+
+Displays a help message with available commands and basic usage information.
+
+### `?reminders`
+
+Shows a list of currently configured scheduled messages, including their timing, timezone, and target channels. This command is only available when scheduled messages are configured.
+
+## Scheduled Messages
+
+Check-Mate can send automated messages at scheduled times. This feature is useful for regular announcements, net reminders, or periodic information broadcasts.
+
+### Configuration
+
+Scheduled messages are configured using the `--messages` command line argument or the `SCHEDULED_MESSAGES` environment variable:
+
+```bash
+# Using command line argument
+make run HOST=meshtastic.local \
+  --messages "Monday;18:45;America/Los_Angeles;1;Reminder: practice net starts in 15 minutes"
+
+# Using environment variable
+SCHEDULED_MESSAGES="Monday;18:45;America/Los_Angeles;1;Reminder: practice net starts in 15 minutes" \
+make run HOST=meshtastic.local
+
+# Multiple messages (separate with triple semicolons, newlines, or multiple --messages flags)
+SCHEDULED_MESSAGES="Monday;18:45;America/Los_Angeles;1;Net reminder;;;Tuesday,Thursday;20:00;UTC;2;Weekly check-in time" \
+make run HOST=meshtastic.local
+```
+
+### Message Format
+
+Each scheduled message follows this format: `Day(s);Time;Timezone;ChannelIndex;Message`
+
+- **Day(s)**: Day of the week when the message should be sent
+  - Single day: `Monday`, `Tuesday`, etc.
+  - Multiple days: `Monday,Wednesday,Friday` (comma-separated)
+  - Supports full names (`Monday`) or abbreviations (`Mon`)
+- **Time**: 24-hour format `HH:MM` (e.g., `18:45`, `07:30`)
+- **Timezone**: IANA timezone identifier (e.g., `America/Los_Angeles`, `Europe/London`, `UTC`)
+- **ChannelIndex**: Numeric channel index (e.g., `0` for primary, `1`, `2`, etc.)
+- **Message**: The text content to send
+
+### Multiple Message Delimiters
+
+When specifying multiple messages, you can use any of these delimiters (in order of priority):
+
+1. **Triple semicolons (`;;;`)** - Primary delimiter, works well in environment variables
+2. **` --messages ` separator** - Secondary delimiter for command-line usage
+3. **Newlines** - Fallback delimiter for multi-line strings
+
+### Examples
+
+```bash
+# Weekly net reminder every Monday at 6:45 PM Pacific Time on channel 1
+--messages "Monday;18:45;America/Los_Angeles;1;Reminder: GRMS practice net starts in 15 minutes"
+
+# Multiple messages for different events across timezones (using triple semicolons)
+--messages "Monday;18:45;America/Los_Angeles;1;West Coast practice net reminder;;;Sunday;19:00;America/New_York;2;East Coast emergency communications check;;;Tuesday;14:30;Europe/London;0;UK afternoon check-in"
+
+# Weekday morning announcement in UTC on primary channel
+--messages "Monday,Tuesday,Wednesday,Thursday,Friday;08:00;UTC;0;Good morning! Weather update at noon."
+
+# Multiple days with different timezones on channel 3
+--messages "Monday,Wednesday,Friday;09:00;America/Chicago;3;Midwest morning net"
+
+# Using triple semicolons in environment variables (easier for complex configurations)
+SCHEDULED_MESSAGES="Monday;18:45;America/Los_Angeles;1;West Coast net;;;Tuesday;19:00;America/New_York;1;East Coast net;;;Sunday;20:00;UTC;2;International check-in"
+```
+
+### Scheduling Behavior
+
+- **Timing**: Messages are checked every 30 seconds and sent when the current time matches the scheduled time
+- **Precision**: Messages are sent within 30 seconds of the scheduled time
+- **Duplicate Prevention**: Each message is sent only once per day, even if the service restarts
+- **Daily Reset**: The duplicate prevention resets at midnight each day
+
+### Edge Cases and Considerations
+
+> [!WARNING]
+> **Important Notes about Service Restarts:**
+> 
+> **Missed Messages**: If the service is down during a scheduled time, that message will be skipped for that day
+> **Duplicate Messages**: If the service restarts within the same minute as a scheduled message, it may send the message again
+
+**Best Practices:**
+- Deploy Check-Mate with automatic restart capabilities (e.g., systemd, Docker restart policies, or ECS)
+- Monitor service health to ensure scheduled messages are being sent
+- Consider using health check URLs to track service availability
+- Test scheduled messages during off-peak hours first
+
 ## Command Usage
 
 On any Meshtastic node in your mesh network, send any of the supported commands on a non-default channel (any channel except channel 0).
 
 ### Arguments
 
-| Arg               | Env             | Description                                                        |
-| ----------------- | --------------- | ------------------------------------------------------------------ |
-| -h                | N/A             | Show help                                                          |
-| --host            | HOST            | The IP or hostname of the meshtastic node, e.g. `192.168.5.10`     |
-| --location        | LOCATION        | Text description of where your node is, e.g. `SF Mission District` |
-| --healthcheck     | HEALTHCHECKURL  | URL to send healthcheck pings to when receiving messages           |
-| --status          | N/A             | Print JSON of latest status                                        |
-| --status-dir      | STATUS_DIR      | Override where the status file is located (see below)              |
-| --latitude        | LATITUDE        | Latitude for location services (e.g. weather)                      |
-| --longitude       | LONGITUDE       | Longitude for location services (e.g. weather)                     |
-| --weather-api-key | WEATHER_API_KEY | API key for OpenWeatherMap                                         |
+| Arg               | Env                | Description                                                        |
+| ----------------- | ------------------ | ------------------------------------------------------------------ |
+| -h                | N/A                | Show help                                                          |
+| --host            | HOST               | The IP or hostname of the meshtastic node, e.g. `192.168.5.10`     |
+| --location        | LOCATION           | Text description of where your node is, e.g. `SF Mission District` |
+| --healthcheck     | HEALTHCHECKURL     | URL to send healthcheck pings to when receiving messages           |
+| --status          | N/A                | Print JSON of latest status                                        |
+| --status-dir      | STATUS_DIR         | Override where the status file is located (see below)              |
+| --latitude        | LATITUDE           | Latitude for location services (e.g. weather)                      |
+| --longitude       | LONGITUDE          | Longitude for location services (e.g. weather)                     |
+| --weather-api-key | WEATHER_API_KEY    | API key for OpenWeatherMap                                         |
+| --messages        | SCHEDULED_MESSAGES | Scheduled messages in format: 'Day(s);Time;Timezone;ChannelIndex;Message' |
 
 ## Docker
 

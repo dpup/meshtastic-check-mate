@@ -1,4 +1,4 @@
-meshtastic==2.5.1
+meshtastic==2.6.4
 pubsub==0.1.2
 python-json-logger==2.0.7
 requests>=2.31.0

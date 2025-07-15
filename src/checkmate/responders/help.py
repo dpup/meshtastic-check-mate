@@ -20,6 +20,7 @@ COMMAND_DESCRIPTIONS = {
     "net": "Show network statistics for connected nodes",
     "weather": "Get current weather for the node's location",
     "alerts": "Get active weather alerts for the node's location",
+    "reminders": "Show currently configured scheduled messages",
 }
 
 
