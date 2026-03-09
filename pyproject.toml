@@ -1,0 +1,37 @@
+[project]
+name = "checkmate"
+version = "0.1.0"
+description = "Meshtastic private channel monitor and radio check responder"
+authors = [
+    { name = "Meshtastic Team", email = "info@meshtastic.org" },
+]
+requires-python = ">=3.10"
+dependencies = [
+    "meshtastic==2.6.4",
+    "pubsub==0.1.2",
+    "python-json-logger==2.0.7",
+    "requests>=2.31.0",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "flake8>=6.0.0",
+    "pytest-cov>=4.0.0",
+]
+
+[project.scripts]
+check-mate = "checkmate.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"

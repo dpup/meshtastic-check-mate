@@ -2,6 +2,7 @@
 **/__pycache__
 **/.venv
 venv/
+.python-version
 **/.classpath
 **/.env
 **/.envrc

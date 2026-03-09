@@ -1,37 +1,33 @@
-.PHONY: setup install develop run status test lint clean
+.PHONY: help setup install develop run status test lint clean
 
-VENV = venv
-PYTHON = $(VENV)/bin/python3
-PIP = $(VENV)/bin/pip
+help: ## Show this help
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
 
-setup: $(VENV)
-	$(PIP) install -r requirements.txt
+setup: ## Sync dependencies
+	uv sync
 
-install: $(VENV)
-	$(PIP) install -e .
+install: ## Install the package
+	uv sync
 
-develop: $(VENV)
-	$(PIP) install -e ".[dev]"
+develop: ## Install with dev dependencies
+	uv sync --extra dev
 
-$(VENV):
-	python3 -m venv $(VENV)
-
-run:
+run: ## Run the app (HOST=<ip> required)
 	@if [ -z "$(HOST)" ]; then \
 		echo "❌ Error: HOST environment variable is required"; \
 		echo "Usage: make run HOST=<device_ip> [LOCATION=<location>] [HEALTHCHECKURL=<url>] [LATITUDE=<lat>] [LONGITUDE=<lon>] [WEATHER_API_KEY=<key>]"; \
 		exit 1; \
 	fi; \
 	echo "🚀 Starting Check-Mate with host $(HOST)..."; \
-	$(PYTHON) -m checkmate.main --host $(HOST) \
+	uv run python -m checkmate.main --host $(HOST) \
 		$(if $(LOCATION),--location $(LOCATION),) \
 		$(if $(HEALTHCHECKURL),--healthcheck $(HEALTHCHECKURL),) \
 		$(if $(LATITUDE),--latitude $(LATITUDE),) \
 		$(if $(LONGITUDE),--longitude $(LONGITUDE),) \
 		$(if $(WEATHER_API_KEY),--weather-api-key $(WEATHER_API_KEY),)
 
-status:
-	@$(PYTHON) -m checkmate.main --status > /tmp/check_mate_status.json; \
+status: ## Check app status
+	@uv run python -m checkmate.main --status > /tmp/check_mate_status.json; \
 	STATUS_CODE=$$?; \
 	if [ $$STATUS_CODE -eq 0 ]; then \
 		echo "✅ Check-Mate is running and active (status code: $$STATUS_CODE)"; \
@@ -42,17 +38,17 @@ status:
 	fi; \
 	cat /tmp/check_mate_status.json
 
-test:
+test: ## Run tests
 	@echo "🧪 Running tests..."
-	@$(PYTHON) -m pytest
+	@uv run pytest
 
-lint:
+lint: ## Run code quality checks
 	@echo "🔍 Running code quality checks..."
-	@$(PYTHON) -m flake8 src/ tests/ || (echo "❌ Code quality issues found"; exit 1)
+	@uv run flake8 src/ tests/ || (echo "❌ Code quality issues found"; exit 1)
 
-clean:
+clean: ## Remove build artifacts and venv
 	@echo "🧹 Cleaning up environment..."
-	@rm -rf $(VENV) build/ dist/ *.egg-info/
+	@rm -rf .venv build/ dist/ *.egg-info/
 	@find . -type d -name __pycache__ -exec rm -rf {} +
 	@find . -type f -name "*.pyc" -delete
 	@echo "✅ Cleanup complete"

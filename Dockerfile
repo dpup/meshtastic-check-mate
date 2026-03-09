@@ -15,16 +15,18 @@ RUN adduser \
   --uid "${UID}" \
   appuser
 
-# Copy files needed for installation
-COPY setup.py requirements.txt ./
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+# Copy project files
+COPY pyproject.toml uv.lock ./
 COPY src ./src/
 
-# Install the package
-RUN --mount=type=cache,target=/root/.cache/pip \
-  python -m pip install -e .
+# Install dependencies
+RUN --mount=type=cache,target=/root/.cache/uv \
+  uv sync --frozen --no-dev
 
 USER appuser
 
 HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 CMD python3 -m checkmate.main --status
 
-ENTRYPOINT ["python3", "-m", "checkmate.main"]
+ENTRYPOINT ["uv", "run", "python3", "-m", "checkmate.main"]
