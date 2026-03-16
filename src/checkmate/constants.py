@@ -9,6 +9,8 @@ PROBE_TIMEOUT = 30  # Time before sending a probe
 CONNECTION_RETRY_DELAY = 5  # Seconds to wait before retrying connection
 MAX_HOPS = 3  # Default max hop count in Meshtastic
 NETSTAT_WINDOW_HOURS = 3  # Time window for netstat reports (in hours)
+TRACEROUTE_MIN_HOPS = 2  # Minimum hops away for traceroute candidates
+TRACEROUTE_COOLDOWN_HOURS = 6  # Hours between traceroutes to the same node
 
 # Regex patterns
 RADIO_CHECK_PATTERN = r"(mesh|radio)\s*check"

@@ -10,6 +10,7 @@ Check-Mate provides a variety of useful services to your Meshtastic mesh network
 - **Network Status**: Get visibility into your mesh network topology
 - **Weather Information**: Access current weather conditions and alerts
 - **Signal Reports**: Detailed signal metrics including RSSI and SNR
+- **Automatic Traceroutes**: Periodically probe distant nodes to map mesh paths
 
 The bot connects to a Meshtastic node on your network and responds to commands sent on any channel.
 
@@ -175,6 +176,31 @@ Displays a help message with available commands and basic usage information.
 
 Shows a list of currently configured scheduled messages, including their timing, timezone, and target channels. This command is only available when scheduled messages are configured.
 
+## Automatic Traceroutes
+
+Check-Mate can periodically issue Meshtastic traceroutes to distant nodes, helping you understand mesh paths and propagation without any manual intervention.
+
+### How it works
+
+Every N minutes (configurable), the scheduler picks a weighted-random node and sends a traceroute to it. Node selection follows two rules:
+
+- **Eligibility**: the node must be at least 2 hops away and must not have been traced in the last 6 hours.
+- **Weighting**: `hops × exp(-hours_since_last_seen)` — nodes that are both far away and recently active score highest, maximising the chance the traceroute succeeds.
+
+Results appear in the Meshtastic device log (and any connected clients) just like a manually triggered traceroute.
+
+### Configuration
+
+Enable traceroutes with the `--traceroute-interval` flag or the `TRACEROUTE_INTERVAL` environment variable. The value is in minutes. Omitting the flag (or setting it to `0`) disables the feature. The Docker image defaults to `30` minutes.
+
+```bash
+# Run a traceroute every 30 minutes
+make run HOST=meshtastic.local TRACEROUTE_INTERVAL=30
+
+# Or via the CLI flag
+check-mate --host meshtastic.local --traceroute-interval 30
+```
+
 ## Scheduled Messages
 
 Check-Mate can send automated messages at scheduled times. This feature is useful for regular announcements, net reminders, or periodic information broadcasts.
@@ -276,6 +302,7 @@ On any Meshtastic node in your mesh network, send any of the supported commands 
 | --longitude       | LONGITUDE          | Longitude for location services (e.g. weather)                     |
 | --weather-api-key | WEATHER_API_KEY    | API key for OpenWeatherMap                                         |
 | --messages        | SCHEDULED_MESSAGES | Scheduled messages in format: 'Day(s);Time;Timezone;ChannelIndex;Message' |
+| --traceroute-interval | TRACEROUTE_INTERVAL | Interval in minutes between automatic traceroutes (0 = disabled, default in Docker: 30) |
 
 ## Docker
 

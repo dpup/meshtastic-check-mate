@@ -27,6 +27,8 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 USER appuser
 
+ENV TRACEROUTE_INTERVAL=30
+
 HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 CMD python3 -m checkmate.main --status
 
 ENTRYPOINT ["uv", "run", "python3", "-m", "checkmate.main"]

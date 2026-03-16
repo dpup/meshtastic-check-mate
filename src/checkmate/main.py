@@ -55,6 +55,7 @@ from .responders import (
     HelpResponder,
 )
 from .responders.scheduled import ScheduledMessageResponder, parse_scheduled_messages
+from .responders.traceroute import TracerouteScheduler
 from .responders.base import NodeInfoReceiver, ConfigurableResponder
 
 
@@ -77,6 +78,7 @@ class CheckMate:
         weather_api_key: Optional[str] = None,
         responders: Optional[List[MessageResponder]] = None,
         scheduled_message_responder: Optional[ScheduledMessageResponder] = None,
+        traceroute_scheduler: Optional[TracerouteScheduler] = None,
     ) -> None:
         """
         Initialize a new CheckMate instance.
@@ -91,6 +93,7 @@ class CheckMate:
             weather_api_key: Optional API key for weather services
             responders: Optional list of message responders in priority order
             scheduled_message_responder: Optional responder for scheduled messages
+            traceroute_scheduler: Optional scheduler for automatic traceroutes
         """
         self.status_manager = status_manager
         self.host = host
@@ -104,6 +107,8 @@ class CheckMate:
         # Initialize default responders if none provided
         self.responders = responders or [RadioCheckResponder()]
         self.scheduled_message_responder = scheduled_message_responder
+
+        self.traceroute_scheduler = traceroute_scheduler
 
         self.users: Dict[str, str] = {}
         self.iface = None
@@ -233,6 +238,10 @@ class CheckMate:
         if self.scheduled_message_responder:
             self.scheduled_message_responder.start_scheduler(interface)
 
+        # Start traceroute scheduler if configured
+        if self.traceroute_scheduler:
+            self.traceroute_scheduler.start_scheduler(interface)
+
         # Start a thread to get the position from our connected device
         self._update_position_from_connected_node(interface)
 
@@ -251,6 +260,10 @@ class CheckMate:
         # Stop scheduled message responder if running
         if self.scheduled_message_responder:
             self.scheduled_message_responder.stop_scheduler()
+
+        # Stop traceroute scheduler if running
+        if self.traceroute_scheduler:
+            self.traceroute_scheduler.stop_scheduler()
 
     def on_receive(self, packet: Dict[str, Any], interface) -> None:
         """
@@ -609,6 +622,15 @@ def main() -> int:
         default=os.environ.get("WEATHER_API_KEY"),
     )
     parser.add_argument(
+        "--traceroute-interval",
+        dest="traceroute_interval",
+        type=float,
+        required=False,
+        help="Interval in minutes between automatic traceroutes to distant nodes "
+             "(omit or set to 0 to disable)",
+        default=float(os.environ.get("TRACEROUTE_INTERVAL", 0)),
+    )
+    parser.add_argument(
         "--messages",
         dest="scheduled_messages",
         required=False,
@@ -666,6 +688,19 @@ def main() -> int:
     if scheduled_message_responder:
         responders.append(scheduled_message_responder)
 
+    # Set up traceroute scheduler if an interval was specified
+    traceroute_scheduler = None
+    if args.traceroute_interval and args.traceroute_interval > 0:
+        traceroute_scheduler = TracerouteScheduler(
+            interval_minutes=args.traceroute_interval
+        )
+        # Add to responders so it receives node info updates via dispatch_node_info
+        responders.append(traceroute_scheduler)
+        logging.getLogger(__name__).info(
+            "Configured traceroute scheduler",
+            extra={"interval_minutes": args.traceroute_interval},
+        )
+
     # Start the application
     checkmate = CheckMate(
         status_manager,
@@ -677,6 +712,7 @@ def main() -> int:
         args.weather_api_key,
         responders=responders,
         scheduled_message_responder=scheduled_message_responder,
+        traceroute_scheduler=traceroute_scheduler,
     )
     return checkmate.start()
 
