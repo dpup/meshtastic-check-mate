@@ -1,0 +1,20 @@
+name: checkmate
+agent: claude-code
+dependencies:
+  - python@3.12
+  - uv
+  - make
+  - git
+grants:
+  - github
+#secrets:
+#  WEATHER_API_KEY: ""
+#env:
+#  HOST: ""
+#  LATITUDE: ""
+#  LONGITUDE: ""
+#  LOCATION: ""
+#  HEALTHCHECKURL: ""
+#  SCHEDULED_MESSAGES: ""
+hooks:
+  pre_run: "uv sync --extra dev"
